@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "extended-markdown",
+	"name": "Extended Markdown",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Extended Markdown support for task lists.",
+	"author": "joeriddles",
+	"authorUrl": "https://github.com/joeriddles",
 	"isDesktopOnly": false
 }

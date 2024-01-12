@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "extended-markdown-plugin",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Extended Markdown support for task lists.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

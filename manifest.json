@@ -1,9 +1,9 @@
 {
-	"id": "extended-markdown",
-	"name": "Extended Markdown",
-	"version": "1.0.1",
+	"id": "extended-task-lists",
+	"name": "Extended Task Lists",
+	"version": "1.0.2",
 	"minAppVersion": "0.15.0",
-	"description": "Extended Markdown support for task lists.",
+	"description": "Extended reader view support for task lists, including in-progress and won't do task items.",
 	"author": "joeriddles",
 	"authorUrl": "https://github.com/joeriddles",
 	"isDesktopOnly": false

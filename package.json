@@ -1,7 +1,7 @@
 {
-	"name": "extended-markdown-plugin",
-	"version": "1.0.1",
-	"description": "Extended Markdown support for task lists.",
+	"name": "extended-task-lists",
+	"version": "1.0.2",
+	"description": "Extended reader view support for task lists, including in-progress and won't do task items.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

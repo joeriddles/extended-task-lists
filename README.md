@@ -1,4 +1,8 @@
-# Obsidian Sample Plugin
+# Extended Markdown Plugin
+
+![image](./static/screenshot.png)
+
+---
 
 This is a sample plugin for Obsidian (https://obsidian.md).
 

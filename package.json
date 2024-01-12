@@ -1,6 +1,6 @@
 {
 	"name": "extended-markdown-plugin",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Extended Markdown support for task lists.",
 	"main": "main.js",
 	"scripts": {

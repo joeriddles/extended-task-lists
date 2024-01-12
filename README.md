@@ -1,4 +1,4 @@
-# Extended Markdown Plugin
+# Extended Task Lists
 
 ![image](./static/screenshot.png)
 

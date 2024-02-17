@@ -20,9 +20,18 @@ input[type=checkbox]:indeterminate:after {
   height: var(--checkbox-size);
   display: block;
   background-color: var(--checkbox-marker-color);
-  -webkit-mask-position: 52% 52%;
-  -webkit-mask-size: 65%;
-  -webkit-mask-repeat: no-repeat;
+
+  --mask-position: 52% 52%;
+  mask-position: var(--mask-position);
+  -webkit-mask-position: var(--mask-position);
+
+  --mask-size: 65%;
+  mask-size: var(--mask-size);
+  -webkit-mask-size: var(--mask-size);
+
+  --mask-repeat: no-repeat;
+  mask-repeat: var(--mask-repeat);
+  -webkit-mask-repeat: var(--mask-repeat);
 
   --mask-image: url('data:image/svg+xml; utf8, <svg width="100%" height="100%" viewBox="0 0 12 10" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><g transform="matrix(0.839754,0,0,1,0.961479,0)"><path d="M12,4.477L12,5.523C12,5.812 11.721,6.047 11.377,6.047L0.623,6.047C0.279,6.047 0,5.812 0,5.523L0,4.477C0,4.188 0.279,3.953 0.623,3.953L11.377,3.953C11.721,3.953 12,4.188 12,4.477Z"/></g></svg>');
   mask-image: var(--mask-image);
@@ -51,9 +60,18 @@ input[type=checkbox].wont-do:after {
   height: var(--checkbox-size);
   display: block;
   background-color: var(--checkbox-marker-color);
-  -webkit-mask-position: 52% 52%;
-  -webkit-mask-size: 65%;
-  -webkit-mask-repeat: no-repeat;
+  
+  --mask-position: 52% 52%;
+  mask-position: var(--mask-position);
+  -webkit-mask-position: var(--mask-position);
+
+  --mask-size: 65%;
+  mask-size: var(--mask-size);
+  -webkit-mask-size: var(--mask-size);
+
+  --mask-repeat: no-repeat;
+  mask-repeat: var(--mask-repeat);
+  -webkit-mask-repeat: var(--mask-repeat);
 
   --mask-image: url('data:image/svg+xml; utf8, <svg width="100%" height="100%" viewBox="0 0 12 10" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><g transform="matrix(0.593795,-0.593795,0.707107,0.707107,-1.09831,5.02724)"><path d="M4.754,3.953L4.754,0.485C4.754,0.196 5.033,-0.039 5.377,-0.039L6.623,-0.039C6.967,-0.039 7.246,0.196 7.246,0.485L7.246,3.953L11.377,3.953C11.721,3.953 12,4.188 12,4.477L12,5.523C12,5.812 11.721,6.047 11.377,6.047L7.246,6.047L7.246,9.515C7.246,9.804 6.967,10.039 6.623,10.039L5.377,10.039C5.033,10.039 4.754,9.804 4.754,9.515L4.754,6.047L0.623,6.047C0.279,6.047 -0,5.812 0,5.523L0,4.477C0,4.188 0.279,3.953 0.623,3.953L4.754,3.953Z" style="fill:rgb(0,0,0);"/></g></svg>');
   mask-image: var(--mask-image);

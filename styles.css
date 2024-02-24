@@ -1,16 +1,20 @@
-input[type=checkbox]:indeterminate {
+/* region: indeterminate */
+input[type=checkbox]:indeterminate,
+input[type=checkbox][data-task="."] {
   --color: rgb(128, 128, 128);
   background-color: var(--color);
   border-color: var(--color);
 }
 
-input[type=checkbox]:indeterminate:hover {
+input[type=checkbox]:indeterminate:hover,
+input[type=checkbox][data-task="."]:hover {
   --color: rgb(164, 164, 164);
   background-color: var(--color);
   border-color: var(--color);
 }
 
-input[type=checkbox]:indeterminate:after {
+input[type=checkbox]:indeterminate:after,
+input[type=checkbox][data-task="."]:after {
   /* Copied from: input[type=checkbox]:checked:after */
   content: "";
   top: -1px;
@@ -37,20 +41,25 @@ input[type=checkbox]:indeterminate:after {
   mask-image: var(--mask-image);
   -webkit-mask-image: var(--mask-image);
 }
+/* endregion */
 
-input[type=checkbox].wont-do {
+/* region: wont-do */
+input[type=checkbox].wont-do,
+input[type=checkbox][data-task="~"] {
   --color: rgb(220, 0, 0);
   background-color: var(--color);
   border-color: var(--color);
 }
 
-input[type=checkbox].wont-do:hover {
+input[type=checkbox].wont-do:hover,
+input[type=checkbox][data-task="~"]:hover {
   --color: rgb(255, 0, 0);
   background-color: var(--color);
   border-color: var(--color);
 }
 
-input[type=checkbox].wont-do:after {
+input[type=checkbox].wont-do:after,
+input[type=checkbox][data-task="~"]:after {
   /* Copied from: input[type=checkbox]:checked:after */
   content: "";
   top: -1px;
@@ -77,3 +86,4 @@ input[type=checkbox].wont-do:after {
   mask-image: var(--mask-image);
   -webkit-mask-image: var(--mask-image);
 }
+/* endregion */

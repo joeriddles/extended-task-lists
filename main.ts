@@ -10,7 +10,6 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 				const char = taskItem.dataset.task;
 				const checkbox = taskItem.find("input[type='checkbox']") as HTMLInputElement;
 
-
 				switch (char) {
 					case ".":
 						checkbox.indeterminate = true;

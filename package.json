@@ -1,6 +1,6 @@
 {
 	"name": "extended-task-lists",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "Extended reader view support for task lists, including in-progress and won't do task items.",
 	"main": "main.js",
 	"scripts": {

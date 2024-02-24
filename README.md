@@ -3,13 +3,14 @@
 ![image](./static/screenshot.png)
 
 ### Features
-- Render in-progress and won't do task items with their own UI
+- Render in-progress and won't do task items with their own UI:
   - in-progress syntax: `- [.] In progress`
   - won't do syntax: `- [~] Won't do`
+- Now supports live preview mode (as of release 1.0.4)!
 
 ### To use
 
-Simply add an in-progress or won't do task item and toggle reader mode (Ctrl/Cmd + E by default)! 
+Simply add an in-progress or won't do task item: 
 
 ```markdown
 - [ ] Pending

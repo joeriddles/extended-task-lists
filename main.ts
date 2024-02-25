@@ -1,56 +1,137 @@
-import { Plugin } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, TFile, Vault } from 'obsidian'
+import { Todo, parseTodos, saveTodos } from './findTodos'
+
+interface ExtendedTaskListsSettings {
+	todoFilename: string
+}
+
+const DEFAULT_SETTINGS: ExtendedTaskListsSettings = {
+	todoFilename: "TODO.md"
+}
 
 export default class ExtendedTaskListsPlugin extends Plugin {
+	settings: ExtendedTaskListsSettings
 
 	async onload() {
+		await this.loadSettings()
+
+		this.addCommand({
+			id: 'update-todo',
+			name: 'Update TODO',
+			callback: this.updateTodo,
+		})
+
+		this.addSettingTab(new ExtendedTaskListsSettingTab(this.app, this))
 
 		this.registerMarkdownPostProcessor((element, context) => {
-			const taskItems = element.findAll(".task-list-item");
+			const taskItems = element.findAll(".task-list-item")
 			for (const taskItem of taskItems) {
-				const char = taskItem.dataset.task;
-				const checkbox = taskItem.find("input[type='checkbox']") as HTMLInputElement;
+				const char = taskItem.dataset.task
+				const checkbox = taskItem.find("input[type='checkbox']") as HTMLInputElement
 
 				switch (char) {
 					case ".":
-						checkbox.indeterminate = true;
-						registerIndeterminateClick(checkbox);
-						break;
+						checkbox.indeterminate = true
+						registerIndeterminateClick(checkbox)
+						break
 					case "~":
-						checkbox.classList.add("wont-do");
-						taskItem.classList.add("wont-do");
-						registerWontDoClick(checkbox, taskItem);
-						break;
+						checkbox.classList.add("wont-do")
+						taskItem.classList.add("wont-do")
+						registerWontDoClick(checkbox, taskItem)
+						break
 				}
 			}
-		});
+		})
 
 		const registerIndeterminateClick = (checkbox: HTMLInputElement) => {
-			let handled = false;
+			let handled = false
 			this.registerDomEvent(checkbox, 'click', (evt: MouseEvent) => {
 				if (handled) {
-					return;
+					return
 				}
 
-				handled = true;
-				checkbox.indeterminate = false;
-				checkbox.checked = true;
-				evt.stopPropagation();
-			});
+				handled = true
+				checkbox.indeterminate = false
+				checkbox.checked = true
+				evt.stopPropagation()
+			})
 		}
 
 		const registerWontDoClick = (checkbox: HTMLInputElement, taskItem: HTMLElement) => {
-			let handled = false;
+			let handled = false
 			this.registerDomEvent(checkbox, 'click', (evt: MouseEvent) => {
 				if (handled) {
-					return;
+					return
 				}
 
-				handled = true;
-				checkbox.checked = true;
-				checkbox.classList.remove("wont-do");
-				taskItem.classList.remove("wont-do");
-				evt.stopPropagation();
-			});
+				handled = true
+				checkbox.checked = true
+				checkbox.classList.remove("wont-do")
+				taskItem.classList.remove("wont-do")
+				evt.stopPropagation()
+			})
 		}
+	}
+
+	async loadSettings() {
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData())
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings)
+	}
+
+	updateTodo = async () => {
+		const vault = this.app.vault
+
+		const markdownFiles = vault.getMarkdownFiles().filter(file => file.name != this.settings.todoFilename)
+		const todos: Todo[] = []
+		markdownFiles.forEach(async (file) => {
+			const contents = await vault.cachedRead(file)
+			todos.push(...parseTodos(file, contents))
+		})
+
+		const todoFile = await this.getOrCreateTodoFile(vault);
+		await saveTodos(todoFile, todos)
+	}
+
+	getOrCreateTodoFile = async (vault: Vault): Promise<TFile> => {
+		let todoFile: TFile
+		try {
+			todoFile = await vault.create(this.settings.todoFilename, "")
+		} catch (e) {
+			const todoFileOrNull = vault.getAbstractFileByPath(this.settings.todoFilename)
+			if (todoFileOrNull == null) {
+				throw new Error(`Could not get or create the TODO file: ${this.settings.todoFilename}`)
+			} else if (!(todoFileOrNull instanceof TFile)) {
+				throw new Error(`The retrieved TODO file is a folder: ${this.settings.todoFilename}`)
+			}
+			todoFile = todoFileOrNull
+		}
+		return todoFile
+	}
+}
+
+class ExtendedTaskListsSettingTab extends PluginSettingTab {
+	plugin: ExtendedTaskListsPlugin
+
+	constructor(app: App, plugin: ExtendedTaskListsPlugin) {
+		super(app, plugin)
+		this.plugin = plugin
+	}
+
+	display(): void {
+		const { containerEl } = this
+
+		containerEl.empty()
+
+		new Setting(containerEl)
+			.setName('TODO filename')
+			.addText(text => text
+				.setValue(this.plugin.settings.todoFilename)
+				.onChange(async (value) => {
+					this.plugin.settings.todoFilename = value
+					await this.plugin.saveSettings()
+				}))
 	}
 }

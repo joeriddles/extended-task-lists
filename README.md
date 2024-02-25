@@ -1,4 +1,6 @@
-# Extended Task Lists
+<h1>
+<img src="/static/logo-sm.png" />Extended Task Lists
+</h1>
 
 ![image](./static/screenshot.png)
 

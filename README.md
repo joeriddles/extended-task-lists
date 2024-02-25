@@ -29,9 +29,13 @@ Remember to run `npm run dev` while developing or you won't see your changes in 
 
 ### Release
 
-To create a release:
+To update the package version:
 ```shell
 npm version [major|minor|patch]
+```
+
+To create a release:
+```shell
 git tag x.y.z
 git push origin --tags
 ```

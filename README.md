@@ -1,5 +1,6 @@
 <h1>
-<img src="/static/logo-sm.png" />Extended Task Lists
+<img src="/static/logo-sm.png" height="38" width=38 style="margin-right: 4px;" />
+Extended Task Lists
 </h1>
 
 ![image](./static/screenshot.png)

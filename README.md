@@ -31,6 +31,7 @@ Remember to run `npm run dev` while developing or you won't see your changes in 
 
 To create a release:
 ```shell
+npm version [major|minor|patch]
 git tag x.y.z
 git push origin --tags
 ```

@@ -26,7 +26,18 @@ Simply add an in-progress or won't do task item:
 
 ### Development
 
-To get started, set up your local dev environment by following steps 1–3 in the official Obsidian docs for building a plugin: https://docs.obsidian.md/Plugins/Getting+started/Build+a+plugin#Step+1+Download+the+sample+plugin.
+To get started, set up your local dev environment by following steps 1–3 in the [official Obsidian docs for building a plugin](https://docs.obsidian.md/Plugins/Getting+started/Build+a+plugin#Step+1+Download+the+sample+plugin).
+
+Basically, the steps look like this:
+```shell
+mkdir -p extended-task-lists/.obsidian/plugins
+cd extended-task-lists/.obsidian/plugins
+git clone https://github.com/joeriddles/extended-task-lists.git
+npm i
+npm run dev
+```
+
+Then open the top-level `extended-task-lists/` folder in Obsidian as a new vault, enable community plugins in the settings, and enable the Extended Task Lists plugin.
 
 Remember to run `npm run dev` while developing or you won't see your changes in Obsidian.
 

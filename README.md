@@ -1,5 +1,5 @@
-<h1>
-<img src="/static/logo-sm.png" height="38" width=38 style="margin-right: 4px;" />
+<h1 style="display: flex;">
+<img src="/static/logo-sm.png" height="38" width="38" style="margin-right: 4px" />
 Extended Task Lists
 </h1>
 

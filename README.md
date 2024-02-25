@@ -36,6 +36,6 @@ npm version [major|minor|patch]
 
 To create a release:
 ```shell
-git tag x.y.z
+git tag x.y.z  # done by `npm version`
 git push origin --tags
 ```

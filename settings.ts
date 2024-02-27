@@ -4,6 +4,7 @@ interface ExtendedTaskListsSettings {
   todoFilename: string;
   excludeFilePattern: string;
   excludeFolderFilename: string;
+  useFullFilepath: boolean;
   includeNotStarted: boolean;
   includeInProgress: boolean;
   includeWontDo: boolean;
@@ -14,6 +15,7 @@ const DEFAULT_SETTINGS: ExtendedTaskListsSettings = {
   todoFilename: "TODO.md",
   excludeFilePattern: "<!-- exclude TODO -->",
   excludeFolderFilename: ".exclude_todos",
+  useFullFilepath: false,
   includeNotStarted: true,
   includeInProgress: true,
   includeWontDo: false,
@@ -80,6 +82,16 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.includeNotStarted)
         .onChange(async (value) => {
           this.plugin.settings.includeNotStarted = value
+          await this.plugin.saveSettings()
+        }))
+
+    new Setting(containerEl)
+      .setName('Use full filepath')
+      .setDesc("If checked, the full Vault filepath is used for the label of grouped task items in the generated TODO file")
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.useFullFilepath)
+        .onChange(async (value) => {
+          this.plugin.settings.useFullFilepath = value
           await this.plugin.saveSettings()
         }))
 

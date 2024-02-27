@@ -1,6 +1,6 @@
 import { Plugin, TFile, Vault } from 'obsidian';
 import { DEFAULT_SETTINGS, ExtendedTaskListsSettingTab, ExtendedTaskListsSettings } from 'settings';
-import TodoService, { Todo } from './findTodos';
+import TodoService, { Todo } from './todoService';
 
 export default class ExtendedTaskListsPlugin extends Plugin {
 	settings: ExtendedTaskListsSettings

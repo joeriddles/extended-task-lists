@@ -96,7 +96,13 @@ class TodoService {
 
     todosByFile.forEach((todos, file) => {
       const urlEncodedFilePath = encodeURI(file.path)
-      data += `- [${file.basename}](${urlEncodedFilePath})\n`
+
+      const heading = this.settings.useFullFilepath
+        ? `- [${file.path}](${urlEncodedFilePath})\n`
+        : `- [${file.basename}](${urlEncodedFilePath})\n`
+
+      data += heading
+
       todos.forEach(todo => {
         data += `    - [${todo.task}] ${todo.text}\n`
       })

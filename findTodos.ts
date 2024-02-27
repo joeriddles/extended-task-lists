@@ -2,7 +2,7 @@
  * TypeScript mirror of https://github.com/joeriddles/notes
  */
 
-import { TFile, Vault } from "obsidian";
+import { TFile, Vault, normalizePath } from "obsidian";
 import { ExtendedTaskListsSettings } from 'settings';
 
 enum TaskType {
@@ -26,21 +26,32 @@ interface Todo {
 const TODO_PATTERN = /^\s*-\s?\[(?<task>.)\]\s+(?<text>.*)$/
 
 class TodoService {
+  vault: Vault
   settings: ExtendedTaskListsSettings
 
-  constructor(settings: ExtendedTaskListsSettings) {
+  constructor(vault: Vault, settings: ExtendedTaskListsSettings) {
+    this.vault = vault
     this.settings = settings
   }
 
-  async findTodosFiles(vault: Vault): Promise<TodoFile[]> {
-    const todoPromises = vault
-      .getMarkdownFiles()
-      .filter(file => file.name != this.settings.todoFilename)
-      .map(async file => {
-        const contents = await vault.cachedRead(file)
-        return { file, contents } as TodoFile
-      })
-    return await Promise.all(todoPromises)
+  async findTodosFiles(): Promise<TodoFile[]> {
+    const markdownFiles = this.vault.getMarkdownFiles()
+    const shouldExcludeFiles = await Promise.all(markdownFiles.map(async file =>
+      await this.getShouldExcludeFile(file)
+    ))
+    const filteredMarkdownFiles = markdownFiles.filter((_, index) => !shouldExcludeFiles[index])
+
+    let todoFiles = await Promise.all(filteredMarkdownFiles.map(async file => {
+      const contents = await this.vault.cachedRead(file)
+      return { file, contents } as TodoFile
+    }))
+
+    todoFiles = todoFiles.filter(todoFile =>
+      !todoFile.contents
+        .split(/[\r\n]+/)
+        .some(line => line.trim() === this.settings.excludeFilePattern)
+    )
+    return todoFiles
   }
 
   parseTodos({ file, contents }: TodoFile): Todo[] {
@@ -90,6 +101,29 @@ class TodoService {
     })
 
     file.vault.modify(file, data)
+  }
+
+  private async getShouldExcludeFile(file: TFile): Promise<boolean> {
+    const isTodoFile = file.name == this.settings.todoFilename
+    if (isTodoFile) {
+      return true
+    }
+
+    let isFolderExcluded = false
+    let parentPath = file.parent?.path
+    if (parentPath) {
+      if (parentPath.at(0) !== "/") {
+        parentPath = "/" + parentPath
+      }
+      let excludeFolderFilepath = parentPath.endsWith("/")
+        ? parentPath + this.settings.excludeFolderFilename
+        : `${parentPath}/${this.settings.excludeFolderFilename}`
+
+      excludeFolderFilepath = normalizePath(excludeFolderFilepath)
+      isFolderExcluded = await this.vault.adapter.exists(excludeFolderFilepath)
+    }
+
+    return isFolderExcluded
   }
 }
 

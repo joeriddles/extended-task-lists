@@ -1,5 +1,5 @@
-import { App, Plugin, PluginSettingTab, Setting, TFile, Vault } from 'obsidian';
-import { DEFAULT_SETTINGS, ExtendedTaskListsSettings } from 'settings';
+import { Plugin, TFile, Vault } from 'obsidian';
+import { DEFAULT_SETTINGS, ExtendedTaskListsSettingTab, ExtendedTaskListsSettings } from 'settings';
 import TodoService, { Todo } from './findTodos';
 
 export default class ExtendedTaskListsPlugin extends Plugin {
@@ -76,11 +76,11 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 
 	updateTodo = async () => {
 		const vault = this.app.vault
-		const service = new TodoService(this.settings)
-		const todoFiles = await service.findTodosFiles(vault)
+		const service = new TodoService(vault, this.settings)
+		const todoFiles = await service.findTodosFiles()
 		const todos: Todo[] = todoFiles
 			.map(todoFile => service.parseTodos(todoFile))
-			.reduce((prev, cur) => prev.concat(cur))
+			.reduce((prev, cur) => prev.concat(cur), [])
 		const todoFile = await this.getOrCreateTodoFile(vault);
 		await service.saveTodos(todoFile, todos)
 	}
@@ -102,63 +102,3 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 	}
 }
 
-class ExtendedTaskListsSettingTab extends PluginSettingTab {
-	plugin: ExtendedTaskListsPlugin
-
-	constructor(app: App, plugin: ExtendedTaskListsPlugin) {
-		super(app, plugin)
-		this.plugin = plugin
-	}
-
-	display(): void {
-		const { containerEl } = this
-
-		containerEl.empty()
-		this.containerEl.createEl("h2", { text: "Generated TODO" });
-
-		new Setting(containerEl)
-			.setName('TODO filename')
-			.addText(text => text
-				.setValue(this.plugin.settings.todoFilename)
-				.onChange(async (value) => {
-					this.plugin.settings.todoFilename = value
-					await this.plugin.saveSettings()
-				}))
-
-		new Setting(containerEl)
-			.setName('Include not started tasks')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.includeNotStarted)
-				.onChange(async (value) => {
-					this.plugin.settings.includeNotStarted = value
-					await this.plugin.saveSettings()
-				}))
-
-		new Setting(containerEl)
-			.setName('Include in progress tasks')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.includeInProgress)
-				.onChange(async (value) => {
-					this.plugin.settings.includeInProgress = value
-					await this.plugin.saveSettings()
-				}))
-
-		new Setting(containerEl)
-			.setName('Include won\'t do tasks')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.includeWontDo)
-				.onChange(async (value) => {
-					this.plugin.settings.includeWontDo = value
-					await this.plugin.saveSettings()
-				}))
-
-		new Setting(containerEl)
-			.setName('Include done tasks')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.includeDone)
-				.onChange(async (value) => {
-					this.plugin.settings.includeDone = value
-					await this.plugin.saveSettings()
-				}))
-	}
-}

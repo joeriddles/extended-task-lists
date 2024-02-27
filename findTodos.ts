@@ -2,7 +2,7 @@
  * TypeScript mirror of https://github.com/joeriddles/notes
  */
 
-import { TFile, Vault, normalizePath } from "obsidian";
+import { TAbstractFile, TFile, Vault, normalizePath } from "obsidian";
 import { ExtendedTaskListsSettings } from 'settings';
 
 enum TaskType {
@@ -103,7 +103,7 @@ class TodoService {
     file.vault.modify(file, data)
   }
 
-  private async getShouldExcludeFile(file: TFile): Promise<boolean> {
+  private async getShouldExcludeFile(file: TAbstractFile): Promise<boolean> {
     const isTodoFile = file.name == this.settings.todoFilename
     if (isTodoFile) {
       return true
@@ -121,6 +121,11 @@ class TodoService {
 
       excludeFolderFilepath = normalizePath(excludeFolderFilepath)
       isFolderExcluded = await this.vault.adapter.exists(excludeFolderFilepath)
+    }
+
+    // Recurse upwards to check if the file is deeply nested in an excluded folder
+    if (!isFolderExcluded && file.parent) {
+      isFolderExcluded = await this.getShouldExcludeFile(file.parent)
     }
 
     return isFolderExcluded

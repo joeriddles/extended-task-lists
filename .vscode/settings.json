@@ -6,5 +6,8 @@
       "source.fixAll": "explicit"
     },
   },
-  "eslint.codeActionsOnSave.mode": "problems"
+  "eslint.codeActionsOnSave.mode": "problems",
+  "cSpell.words": [
+    "todos"
+  ]
 }

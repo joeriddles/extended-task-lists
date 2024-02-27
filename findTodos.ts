@@ -2,7 +2,8 @@
  * TypeScript mirror of https://github.com/joeriddles/notes
  */
 
-import { TFile } from "obsidian"
+import { TFile } from "obsidian";
+import { ExtendedTaskListsSettings } from 'settings';
 
 enum TaskType {
   NotStarted = " ",
@@ -20,8 +21,11 @@ interface Todo {
 const TODO_PATTERN = /^\s*-\s?\[(?<task>.)\]\s+(?<text>.*)$/
 
 class TodoService {
+  settings: ExtendedTaskListsSettings
 
-  constructor() { }
+  constructor(settings: ExtendedTaskListsSettings) {
+    this.settings = settings
+  }
 
   parseTodos(file: TFile, contents: string): Todo[] {
     const lines = contents.split(/[\r\n]+/)
@@ -43,7 +47,12 @@ class TodoService {
     todos.sort((a, b) => a.file.stat.mtime - b.file.stat.mtime)
 
     // Exclude finished tasks
-    todos = todos.filter(todo => todo.task !== TaskType.Done && todo.task !== TaskType.WontDo)
+    todos = todos.filter(todo =>
+      (todo.task === TaskType.NotStarted && this.settings.includeNotStarted)
+      || (todo.task === TaskType.InProgress && this.settings.includeInProgress)
+      || (todo.task === TaskType.WontDo && this.settings.includeWontDo)
+      || (todo.task === TaskType.Done && this.settings.includeDone)
+    )
 
     // Group by file
     const todosByFile: Map<TFile, Todo[]> = new Map();
@@ -70,5 +79,5 @@ class TodoService {
 
 
 export default TodoService
-export type { Todo }
+export type { Todo };
 

@@ -15,6 +15,7 @@ Extended Task Lists
 
 ### To use
 
+#### Extra syntax
 Simply add an in-progress or won't do task item: 
 
 ```markdown
@@ -23,6 +24,13 @@ Simply add an in-progress or won't do task item:
 - [~] Won't do
 - [x] Done
 ```
+
+#### Generate `TODO.md`
+Open the command palette (`Ctrl/Cmd + P` by default) and run the "Extended Task Lists: Generate TODO" command.
+
+The generated filename can be configured in the plugin settings, as well as what task item types are included. By default, done and won't do task items are excluded.
+
+To exclude a markdown file's task items from being included in the generated TODO file, add `<!-- exclude TODO -->` anywhere in the markdown file. To exclude are markdown files in a folder, add an empty `.exclude_todos` file in the folder.
 
 ### Development
 

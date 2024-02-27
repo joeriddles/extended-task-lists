@@ -2,7 +2,7 @@
  * TypeScript mirror of https://github.com/joeriddles/notes
  */
 
-import { TFile } from "obsidian";
+import { TFile, Vault } from "obsidian";
 import { ExtendedTaskListsSettings } from 'settings';
 
 enum TaskType {
@@ -10,6 +10,11 @@ enum TaskType {
   InProgress = ".",
   WontDo = "~",
   Done = "x",
+}
+
+interface TodoFile {
+  file: TFile
+  contents: string
 }
 
 interface Todo {
@@ -27,7 +32,18 @@ class TodoService {
     this.settings = settings
   }
 
-  parseTodos(file: TFile, contents: string): Todo[] {
+  async findTodosFiles(vault: Vault): Promise<TodoFile[]> {
+    const todoPromises = vault
+      .getMarkdownFiles()
+      .filter(file => file.name != this.settings.todoFilename)
+      .map(async file => {
+        const contents = await vault.cachedRead(file)
+        return { file, contents } as TodoFile
+      })
+    return await Promise.all(todoPromises)
+  }
+
+  parseTodos({ file, contents }: TodoFile): Todo[] {
     const lines = contents.split(/[\r\n]+/)
     const matches = lines
       .map(line => line.match(TODO_PATTERN))

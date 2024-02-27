@@ -76,16 +76,11 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 
 	updateTodo = async () => {
 		const vault = this.app.vault
-
 		const service = new TodoService(this.settings)
-
-		const markdownFiles = vault.getMarkdownFiles().filter(file => file.name != this.settings.todoFilename)
-		const todos: Todo[] = []
-		markdownFiles.forEach(async (file) => {
-			const contents = await vault.cachedRead(file)
-			todos.push(...service.parseTodos(file, contents))
-		})
-
+		const todoFiles = await service.findTodosFiles(vault)
+		const todos: Todo[] = todoFiles
+			.map(todoFile => service.parseTodos(todoFile))
+			.reduce((prev, cur) => prev.concat(cur))
 		const todoFile = await this.getOrCreateTodoFile(vault);
 		await service.saveTodos(todoFile, todos)
 	}

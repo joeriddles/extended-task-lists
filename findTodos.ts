@@ -4,8 +4,15 @@
 
 import { TFile } from "obsidian"
 
+enum TaskType {
+  NotStarted = " ",
+  InProgress = ".",
+  WontDo = "~",
+  Done = "x",
+}
+
 interface Todo {
-  task: string
+  task: TaskType
   text: string
   file: TFile
 }
@@ -34,6 +41,9 @@ class TodoService {
 
     // Sort oldest-to-newest
     todos.sort((a, b) => a.file.stat.mtime - b.file.stat.mtime)
+
+    // Exclude finished tasks
+    todos = todos.filter(todo => todo.task !== TaskType.Done && todo.task !== TaskType.WontDo)
 
     // Group by file
     const todosByFile: Map<TFile, Todo[]> = new Map();

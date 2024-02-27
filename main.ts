@@ -1,5 +1,5 @@
 import { App, Plugin, PluginSettingTab, Setting, TFile, Vault } from 'obsidian'
-import { Todo, parseTodos, saveTodos } from './findTodos'
+import TodoService, { Todo } from './findTodos'
 
 interface ExtendedTaskListsSettings {
 	todoFilename: string
@@ -84,15 +84,17 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 	updateTodo = async () => {
 		const vault = this.app.vault
 
+		const service = new TodoService()
+
 		const markdownFiles = vault.getMarkdownFiles().filter(file => file.name != this.settings.todoFilename)
 		const todos: Todo[] = []
 		markdownFiles.forEach(async (file) => {
 			const contents = await vault.cachedRead(file)
-			todos.push(...parseTodos(file, contents))
+			todos.push(...service.parseTodos(file, contents))
 		})
 
 		const todoFile = await this.getOrCreateTodoFile(vault);
-		await saveTodos(todoFile, todos)
+		await service.saveTodos(todoFile, todos)
 	}
 
 	getOrCreateTodoFile = async (vault: Vault): Promise<TFile> => {

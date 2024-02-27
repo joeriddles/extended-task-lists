@@ -73,7 +73,7 @@ class TodoService {
     let data = ""
 
     // Sort oldest-to-newest
-    todos.sort((a, b) => a.file.stat.mtime - b.file.stat.mtime)
+    todos.sort((a, b) => a.file.stat.ctime - b.file.stat.ctime)
 
     // Exclude finished tasks
     todos = todos.filter(todo =>

@@ -28,10 +28,12 @@ const TODO_PATTERN = /^\s*-\s?\[(?<task>.)\]\s+(?<text>.*)$/
 class TodoService {
   vault: Vault
   settings: ExtendedTaskListsSettings
+  private excludeCache: { [path: string]: boolean }
 
   constructor(vault: Vault, settings: ExtendedTaskListsSettings) {
     this.vault = vault
     this.settings = settings
+    this.excludeCache = {}
   }
 
   async findTodosFiles(): Promise<TodoFile[]> {
@@ -109,23 +111,38 @@ class TodoService {
       return true
     }
 
-    let isFolderExcluded = false
-    let parentPath = file.parent?.path
-    if (parentPath) {
-      if (parentPath.at(0) !== "/") {
-        parentPath = "/" + parentPath
-      }
-      let excludeFolderFilepath = parentPath.endsWith("/")
-        ? parentPath + this.settings.excludeFolderFilename
-        : `${parentPath}/${this.settings.excludeFolderFilename}`
-
-      excludeFolderFilepath = normalizePath(excludeFolderFilepath)
-      isFolderExcluded = await this.vault.adapter.exists(excludeFolderFilepath)
+    if (this.excludeCache[file.path]) {
+      return true
     }
+
+    let parentPath = file.parent?.path ?? ""
+    if (!parentPath) {
+      return false
+    }
+
+    if (parentPath.at(0) !== "/") {
+      parentPath = "/" + parentPath
+    }
+    let excludeFolderFilepath = parentPath.endsWith("/")
+      ? parentPath + this.settings.excludeFolderFilename
+      : `${parentPath}/${this.settings.excludeFolderFilename}`
+
+    // Short-circuit if a cached value for the folder is found
+    if (this.excludeCache[parentPath] != null) {
+      return this.excludeCache[parentPath]
+    }
+
+    excludeFolderFilepath = normalizePath(excludeFolderFilepath)
+    let isFolderExcluded = await this.vault.adapter.exists(excludeFolderFilepath)
 
     // Recurse upwards to check if the file is deeply nested in an excluded folder
     if (!isFolderExcluded && file.parent) {
       isFolderExcluded = await this.getShouldExcludeFile(file.parent)
+    }
+
+    // Cache checking this folder
+    if (parentPath) {
+      this.excludeCache[parentPath] = isFolderExcluded
     }
 
     return isFolderExcluded

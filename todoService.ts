@@ -20,10 +20,11 @@ interface TodoFile {
 interface Todo {
   task: TaskType
   text: string
+  indentation: string
   file: TFile
 }
 
-const TODO_PATTERN = /^\s*-\s?\[(?<task>.)\]\s+(?<text>.*)$/
+const TODO_PATTERN = /^(?<indentation>\s*)-\s?\[(?<task>.)\]\s+(?<text>.*)$/
 
 class TodoService {
   vault: Vault
@@ -64,7 +65,8 @@ class TodoService {
     const todos = matches.map(match => {
       const task = match.groups?.task
       const text = match.groups?.text
-      return { task, text, file } as Todo
+      const indentation = match.groups?.indentation
+      return { task, text, indentation, file } as Todo
     })
     return todos
   }
@@ -104,7 +106,7 @@ class TodoService {
       data += heading
 
       todos.forEach(todo => {
-        data += `    - [${todo.task}] ${todo.text}\n`
+        data += `\t${todo.indentation}- [${todo.task}] ${todo.text}\n`
       })
     })
 

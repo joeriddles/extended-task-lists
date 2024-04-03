@@ -2,22 +2,6 @@
  * TypeScript mirror of https://github.com/joeriddles/notes
  */
 
-function noopNormalizePath(path: string) {
-  return path
-}
-
-let normalizePath = noopNormalizePath
-
-import("obsidian")
-  .then(module => {
-    normalizePath = module.normalizePath
-  })
-  .catch(err => {
-    if (!process.env.JEST_WORKER_ID) {
-      throw err
-    }
-  })
-
 import { ExtendedTaskListsSettings } from 'src/settings'
 import { IFile, IFileService } from "./fileService"
 
@@ -36,8 +20,14 @@ interface TodoFile {
 interface Todo {
   task: TaskType
   text: string
+  lineno: number
   indentation: string
   file: IFile
+}
+
+interface IndexMatch {
+  match: RegExpMatchArray
+  index: number
 }
 
 const TODO_PATTERN = /^(?<indentation>\s*)-\s?\[(?<task>.)\]\s+(?<text>.*)$/
@@ -80,16 +70,38 @@ class TodoService {
    * Parse all the task items from the string
    */
   parseTodos(contents: string): Todo[] {
-    const lines = contents.split(/[\r\n]+/)
-    const matches = lines
-      .map(line => line.match(TODO_PATTERN))
-      .filter(match => match != null) as RegExpMatchArray[]
-    const todos = matches.map(match => {
-      const task = match.groups?.task
-      const text = match.groups?.text
-      const indentation = match.groups?.indentation
-      return { task, text, indentation } as Todo
+    const lines = contents.split(/[\r]?[\n]/)
+    const matchesAndIndices = lines
+      .map((line, index) => {
+        const match = line.match(TODO_PATTERN)
+        return { match, index } as IndexMatch
+      })
+      .filter(indexMatch => indexMatch.match != null)
+
+    const todos = matchesAndIndices.map(indexMatch => {
+      const lineno = indexMatch.index
+      const task = indexMatch.match.groups?.task
+      const text = indexMatch.match.groups?.text
+      const indentation = indexMatch.match.groups?.indentation
+      return { task, text, indentation, lineno } as Todo
     })
+
+    const todoToPrevSibling: Map<Todo, Todo | null> = new Map()
+    todos.forEach(todo => {
+      const prevSibling = todos.find(t => t.lineno === todo.lineno - 1) || null
+      todoToPrevSibling.set(todo, prevSibling)
+    })
+
+    const kvps = [...todoToPrevSibling]
+
+    kvps.filter(kvp => kvp[1] == null)
+      .forEach(kvp => kvp[0].indentation = "")
+
+    // Is the task item nested under the previous task item?
+    kvps.filter(kvp => kvp[1] != null && kvp[0].indentation.length > kvp[1].indentation.length)
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      .forEach(kvp => kvp[0].indentation = kvp[1]!.indentation + "    ")
+
     return todos
   }
 
@@ -165,7 +177,7 @@ class TodoService {
       return this.excludeCache[parentPath]
     }
 
-    excludeFolderFilepath = normalizePath(excludeFolderFilepath)
+    excludeFolderFilepath = excludeFolderFilepath.replace("//", "/")
     let isFolderExcluded = await this.fileService.checkExists(excludeFolderFilepath)
 
     // Recurse upwards to check if the file is deeply nested in an excluded folder

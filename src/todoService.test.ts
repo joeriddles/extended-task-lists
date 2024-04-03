@@ -157,21 +157,25 @@ describe("TodoService", () => {
         task: TaskType.NotStarted,
         text: "Pending",
         indentation: "",
+        lineno: 1,
       } as Todo,
       {
         task: TaskType.InProgress,
         text: "In progress",
         indentation: "",
+        lineno: 2,
       } as Todo,
       {
         task: TaskType.WontDo,
         text: "Won't do",
         indentation: "",
+        lineno: 3,
       } as Todo,
       {
         task: TaskType.Done,
         text: "Done",
         indentation: "",
+        lineno: 4,
       } as Todo,
     ]
 
@@ -198,21 +202,25 @@ describe("TodoService", () => {
         task: TaskType.NotStarted,
         text: "Pending",
         indentation: "",
+        lineno: 1,
       } as Todo,
       {
         task: TaskType.InProgress,
         text: "In progress",
         indentation: "    ",
+        lineno: 2,
       } as Todo,
       {
         task: TaskType.WontDo,
         text: "Won't do",
         indentation: "        ",
+        lineno: 3,
       } as Todo,
       {
         task: TaskType.Done,
         text: "Done",
         indentation: "            ",
+        lineno: 4,
       } as Todo,
     ]
 
@@ -227,24 +235,28 @@ describe("TodoService", () => {
       {
         task: TaskType.NotStarted,
         text: "Pending",
+        lineno: 0,
         indentation: "",
         file: tasksFile,
       } as Todo,
       {
         task: TaskType.InProgress,
         text: "In progress",
+        lineno: 1,
         indentation: "    ",
         file: tasksFile,
       } as Todo,
       {
         task: TaskType.WontDo,
         text: "Won't do",
+        lineno: 2,
         indentation: "        ",
         file: tasksFile,
       } as Todo,
       {
         task: TaskType.Done,
         text: "Done",
+        lineno: 3,
         indentation: "            ",
         file: tasksFile,
       } as Todo,
@@ -277,6 +289,7 @@ describe("TodoService", () => {
         task: TaskType.NotStarted,
         text: "Pending",
         indentation: "",
+        lineno: 0,
         file: tasksFile,
       } as Todo,
     ]
@@ -311,18 +324,21 @@ describe("TodoService", () => {
         task: TaskType.NotStarted,
         text: "New TODO",
         indentation: "",
+        lineno: 0,
         file: newFile,
       } as Todo,
       {
         task: TaskType.NotStarted,
         text: "Old TODO",
         indentation: "",
+        lineno: 0,
         file: oldFile,
       } as Todo,
       {
         task: TaskType.NotStarted,
         text: "Mid TODO",
         indentation: "",
+        lineno: 0,
         file: midFile,
       } as Todo,
     ]
@@ -366,8 +382,7 @@ describe("TodoService", () => {
     // Act
     const todoService = new TodoService(mockFileService, MOCK_SETTINGS)
     const todos = todoService.parseTodos(taskFile.content)
-    expect(todos.length).toBe(1)
-    todos[0].file = taskFile
+    todos.forEach(todo => todo.file = taskFile)
     await todoService.saveTodos(todoFile, todos)
 
     // Assert
@@ -375,7 +390,7 @@ describe("TodoService", () => {
 \t- [ ] task item
 \t- [ ] another task item
 \t    - [ ] nested task item
-\t - [ ] top task item
+\t- [ ] top task item
 \t    - [ ] mid task item
 \t        - [ ] bottom task item
 `

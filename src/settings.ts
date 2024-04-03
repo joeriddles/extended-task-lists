@@ -22,10 +22,6 @@ const DEFAULT_SETTINGS: ExtendedTaskListsSettings = {
   includeDone: false,
 }
 
-export { DEFAULT_SETTINGS, ExtendedTaskListsSettingTab };
-export type { ExtendedTaskListsSettings };
-
-
 interface IPlugin extends Plugin {
   settings: ExtendedTaskListsSettings
 
@@ -123,3 +119,7 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
         }))
   }
 }
+
+export { DEFAULT_SETTINGS, ExtendedTaskListsSettingTab };
+export type { ExtendedTaskListsSettings };
+

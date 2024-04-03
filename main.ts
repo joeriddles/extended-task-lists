@@ -1,6 +1,7 @@
 import { Plugin, TFile, Vault } from 'obsidian';
-import { DEFAULT_SETTINGS, ExtendedTaskListsSettingTab, ExtendedTaskListsSettings } from 'settings';
-import TodoService, { Todo } from './todoService';
+import { IFile, VaultFileService } from 'src/fileService';
+import { DEFAULT_SETTINGS, ExtendedTaskListsSettingTab, ExtendedTaskListsSettings } from 'src/settings';
+import TodoService, { Todo } from 'src/todoService';
 
 export default class ExtendedTaskListsPlugin extends Plugin {
 	settings: ExtendedTaskListsSettings
@@ -76,13 +77,18 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 
 	updateTodo = async () => {
 		const vault = this.app.vault
-		const service = new TodoService(vault, this.settings)
+		const fileService = new VaultFileService(vault)
+		const service = new TodoService(fileService, this.settings)
 		const todoFiles = await service.findTodosFiles()
 		const todos: Todo[] = todoFiles
-			.map(todoFile => service.parseTodos(todoFile))
+			.map(todoFile => {
+				const todos = service.parseTodos(todoFile.contents)
+				todos.forEach(todo => todo.file = todoFile.file)
+				return todos
+			})
 			.reduce((prev, cur) => prev.concat(cur), [])
 		const todoFile = await this.getOrCreateTodoFile(vault);
-		await service.saveTodos(todoFile, todos)
+		await service.saveTodos(todoFile as IFile, todos)
 	}
 
 	getOrCreateTodoFile = async (vault: Vault): Promise<TFile> => {

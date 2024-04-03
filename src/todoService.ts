@@ -2,8 +2,24 @@
  * TypeScript mirror of https://github.com/joeriddles/notes
  */
 
-import { TAbstractFile, TFile, Vault, normalizePath } from "obsidian";
-import { ExtendedTaskListsSettings } from 'settings';
+function noopNormalizePath(path: string) {
+  return path
+}
+
+let normalizePath = noopNormalizePath
+
+import("obsidian")
+  .then(module => {
+    normalizePath = module.normalizePath
+  })
+  .catch(err => {
+    if (!process.env.JEST_WORKER_ID) {
+      throw err
+    }
+  })
+
+import { ExtendedTaskListsSettings } from 'src/settings'
+import { IFile, IFileService } from "./fileService"
 
 enum TaskType {
   NotStarted = " ",
@@ -13,7 +29,7 @@ enum TaskType {
 }
 
 interface TodoFile {
-  file: TFile
+  file: IFile
   contents: string
 }
 
@@ -21,31 +37,34 @@ interface Todo {
   task: TaskType
   text: string
   indentation: string
-  file: TFile
+  file: IFile
 }
 
 const TODO_PATTERN = /^(?<indentation>\s*)-\s?\[(?<task>.)\]\s+(?<text>.*)$/
 
 class TodoService {
-  vault: Vault
-  settings: ExtendedTaskListsSettings
+  private fileService: IFileService
+  private settings: ExtendedTaskListsSettings
   private excludeCache: { [path: string]: boolean }
 
-  constructor(vault: Vault, settings: ExtendedTaskListsSettings) {
-    this.vault = vault
+  constructor(fileService: IFileService, settings: ExtendedTaskListsSettings) {
+    this.fileService = fileService
     this.settings = settings
     this.excludeCache = {}
   }
 
+  /**
+   * Find all the non-excluded Markdown files that _may_ contain task items.
+   */
   async findTodosFiles(): Promise<TodoFile[]> {
-    const markdownFiles = this.vault.getMarkdownFiles()
+    const markdownFiles = await this.fileService.getFiles()
     const shouldExcludeFiles = await Promise.all(markdownFiles.map(async file =>
       await this.getShouldExcludeFile(file)
     ))
     const filteredMarkdownFiles = markdownFiles.filter((_, index) => !shouldExcludeFiles[index])
 
     let todoFiles = await Promise.all(filteredMarkdownFiles.map(async file => {
-      const contents = await this.vault.cachedRead(file)
+      const contents = await this.fileService.readFile(file)
       return { file, contents } as TodoFile
     }))
 
@@ -57,7 +76,10 @@ class TodoService {
     return todoFiles
   }
 
-  parseTodos({ file, contents }: TodoFile): Todo[] {
+  /**
+   * Parse all the task items from the string
+   */
+  parseTodos(contents: string): Todo[] {
     const lines = contents.split(/[\r\n]+/)
     const matches = lines
       .map(line => line.match(TODO_PATTERN))
@@ -66,12 +88,12 @@ class TodoService {
       const task = match.groups?.task
       const text = match.groups?.text
       const indentation = match.groups?.indentation
-      return { task, text, indentation, file } as Todo
+      return { task, text, indentation } as Todo
     })
     return todos
   }
 
-  async saveTodos(file: TFile, todos: Todo[]): Promise<void> {
+  async saveTodos(file: IFile, todos: Todo[]): Promise<void> {
     let data = ""
 
     // Sort oldest-to-newest
@@ -86,7 +108,7 @@ class TodoService {
     )
 
     // Group by file
-    const todosByFile: Map<TFile, Todo[]> = new Map();
+    const todosByFile: Map<IFile, Todo[]> = new Map()
     todos.forEach(todo => {
       if (!todosByFile.get(todo.file)) {
         todosByFile.set(todo.file, [])
@@ -110,10 +132,10 @@ class TodoService {
       })
     })
 
-    file.vault.modify(file, data)
+    this.fileService.updateFile(file, data)
   }
 
-  private async getShouldExcludeFile(file: TAbstractFile): Promise<boolean> {
+  private async getShouldExcludeFile(file: IFile): Promise<boolean> {
     const isTodoFile = file.name == this.settings.todoFilename
     if (isTodoFile) {
       return true
@@ -141,7 +163,7 @@ class TodoService {
     }
 
     excludeFolderFilepath = normalizePath(excludeFolderFilepath)
-    let isFolderExcluded = await this.vault.adapter.exists(excludeFolderFilepath)
+    let isFolderExcluded = await this.fileService.checkExists(excludeFolderFilepath)
 
     // Recurse upwards to check if the file is deeply nested in an excluded folder
     if (!isFolderExcluded && file.parent) {
@@ -159,5 +181,6 @@ class TodoService {
 
 
 export default TodoService
-export type { Todo };
+export { TaskType }
+export type { Todo, TodoFile }
 

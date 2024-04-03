@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: "18.x"
 
-      - name: Build plugin
+      - name: Run tests
         run: |
           npm install -D
           npm run test

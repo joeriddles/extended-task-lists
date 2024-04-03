@@ -157,21 +157,25 @@ describe("TodoService", () => {
         task: TaskType.NotStarted,
         text: "Pending",
         indentation: "",
+        lineno: 1,
       } as Todo,
       {
         task: TaskType.InProgress,
         text: "In progress",
         indentation: "",
+        lineno: 2,
       } as Todo,
       {
         task: TaskType.WontDo,
         text: "Won't do",
         indentation: "",
+        lineno: 3,
       } as Todo,
       {
         task: TaskType.Done,
         text: "Done",
         indentation: "",
+        lineno: 4,
       } as Todo,
     ]
 
@@ -198,21 +202,25 @@ describe("TodoService", () => {
         task: TaskType.NotStarted,
         text: "Pending",
         indentation: "",
+        lineno: 1,
       } as Todo,
       {
         task: TaskType.InProgress,
         text: "In progress",
         indentation: "    ",
+        lineno: 2,
       } as Todo,
       {
         task: TaskType.WontDo,
         text: "Won't do",
         indentation: "        ",
+        lineno: 3,
       } as Todo,
       {
         task: TaskType.Done,
         text: "Done",
         indentation: "            ",
+        lineno: 4,
       } as Todo,
     ]
 
@@ -227,24 +235,28 @@ describe("TodoService", () => {
       {
         task: TaskType.NotStarted,
         text: "Pending",
+        lineno: 0,
         indentation: "",
         file: tasksFile,
       } as Todo,
       {
         task: TaskType.InProgress,
         text: "In progress",
+        lineno: 1,
         indentation: "    ",
         file: tasksFile,
       } as Todo,
       {
         task: TaskType.WontDo,
         text: "Won't do",
+        lineno: 2,
         indentation: "        ",
         file: tasksFile,
       } as Todo,
       {
         task: TaskType.Done,
         text: "Done",
+        lineno: 3,
         indentation: "            ",
         file: tasksFile,
       } as Todo,
@@ -255,9 +267,9 @@ describe("TodoService", () => {
 
     // Act
     const todoService = new TodoService(mockFileService, MOCK_SETTINGS)
-    todoService.saveTodos(todoFile, todos)
+    await todoService.saveTodos(todoFile, todos)
 
-    // Expected
+    // Assert
     const expected = `- [Tasks.md](/Tasks.md)
 \t- [ ] Pending
 \t    - [.] In progress
@@ -277,6 +289,7 @@ describe("TodoService", () => {
         task: TaskType.NotStarted,
         text: "Pending",
         indentation: "",
+        lineno: 0,
         file: tasksFile,
       } as Todo,
     ]
@@ -286,9 +299,9 @@ describe("TodoService", () => {
 
     // Act
     const todoService = new TodoService(mockFileService, MOCK_SETTINGS)
-    todoService.saveTodos(todoFile, todos)
+    await todoService.saveTodos(todoFile, todos)
 
-    // Expected
+    // Assert
     const expected = `- [Tasks & Porpoises 🐬.md](/Folder/Tasks%20&%20Porpoises%20%F0%9F%90%AC.md)
 \t- [ ] Pending
 `
@@ -311,18 +324,21 @@ describe("TodoService", () => {
         task: TaskType.NotStarted,
         text: "New TODO",
         indentation: "",
+        lineno: 0,
         file: newFile,
       } as Todo,
       {
         task: TaskType.NotStarted,
         text: "Old TODO",
         indentation: "",
+        lineno: 0,
         file: oldFile,
       } as Todo,
       {
         task: TaskType.NotStarted,
         text: "Mid TODO",
         indentation: "",
+        lineno: 0,
         file: midFile,
       } as Todo,
     ]
@@ -332,15 +348,51 @@ describe("TodoService", () => {
 
     // Act
     const todoService = new TodoService(mockFileService, MOCK_SETTINGS)
-    todoService.saveTodos(todoFile, todos)
+    await todoService.saveTodos(todoFile, todos)
 
-    // Expected
+    // Assert
     const expected = `- [Old.md](/Old.md)
 \t- [ ] Old TODO
 - [Mid.md](/Mid.md)
 \t- [ ] Mid TODO
 - [New.md](/New.md)
 \t- [ ] New TODO
+`
+
+    const actual = todoFile.content
+    expect(actual).toEqual(expected)
+  })
+
+  test("Whole shebang formats TODO.md correctly with task items nested under normal lists", async () => {
+    // Arrange
+    const taskFile = createMockFile("Tasks.md", `
+- some list
+    - more lists
+        - [ ] task item
+- some list
+    - [ ] another task item
+        - [ ] nested task item
+- [ ] top task item
+    - [ ] mid task item
+        - [ ] bottom task item
+    `)
+    const todoFile = createMockFile("TODO.md", "")
+    const mockFileService = new MockFileService([taskFile, todoFile])
+
+    // Act
+    const todoService = new TodoService(mockFileService, MOCK_SETTINGS)
+    const todos = todoService.parseTodos(taskFile.content)
+    todos.forEach(todo => todo.file = taskFile)
+    await todoService.saveTodos(todoFile, todos)
+
+    // Assert
+    const expected = `- [Tasks.md](/Tasks.md)
+\t- [ ] task item
+\t- [ ] another task item
+\t    - [ ] nested task item
+\t- [ ] top task item
+\t    - [ ] mid task item
+\t        - [ ] bottom task item
 `
 
     const actual = todoFile.content

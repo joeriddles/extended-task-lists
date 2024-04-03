@@ -93,7 +93,10 @@ class TodoService {
     return todos
   }
 
-  async saveTodos(file: IFile, todos: Todo[]): Promise<void> {
+  /**
+   * Save the task items to the TODO file
+   */
+  async saveTodos(todoFile: IFile, todos: Todo[]): Promise<void> {
     let data = ""
 
     // Sort oldest-to-newest
@@ -132,7 +135,7 @@ class TodoService {
       })
     })
 
-    this.fileService.updateFile(file, data)
+    this.fileService.updateFile(todoFile, data)
   }
 
   private async getShouldExcludeFile(file: IFile): Promise<boolean> {

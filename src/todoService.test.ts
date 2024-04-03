@@ -255,9 +255,9 @@ describe("TodoService", () => {
 
     // Act
     const todoService = new TodoService(mockFileService, MOCK_SETTINGS)
-    todoService.saveTodos(todoFile, todos)
+    await todoService.saveTodos(todoFile, todos)
 
-    // Expected
+    // Assert
     const expected = `- [Tasks.md](/Tasks.md)
 \t- [ ] Pending
 \t    - [.] In progress
@@ -286,9 +286,9 @@ describe("TodoService", () => {
 
     // Act
     const todoService = new TodoService(mockFileService, MOCK_SETTINGS)
-    todoService.saveTodos(todoFile, todos)
+    await todoService.saveTodos(todoFile, todos)
 
-    // Expected
+    // Assert
     const expected = `- [Tasks & Porpoises 🐬.md](/Folder/Tasks%20&%20Porpoises%20%F0%9F%90%AC.md)
 \t- [ ] Pending
 `
@@ -332,15 +332,41 @@ describe("TodoService", () => {
 
     // Act
     const todoService = new TodoService(mockFileService, MOCK_SETTINGS)
-    todoService.saveTodos(todoFile, todos)
+    await todoService.saveTodos(todoFile, todos)
 
-    // Expected
+    // Assert
     const expected = `- [Old.md](/Old.md)
 \t- [ ] Old TODO
 - [Mid.md](/Mid.md)
 \t- [ ] Mid TODO
 - [New.md](/New.md)
 \t- [ ] New TODO
+`
+
+    const actual = todoFile.content
+    expect(actual).toEqual(expected)
+  })
+
+  test("Whole shebang formats TODO.md correctly with task items nested under normal lists", async () => {
+    // Arrange
+    const taskFile = createMockFile("Tasks.md", `
+- some list
+    - more lists
+        - [ ] task item
+    `)
+    const todoFile = createMockFile("TODO.md", "")
+    const mockFileService = new MockFileService([taskFile, todoFile])
+
+    // Act
+    const todoService = new TodoService(mockFileService, MOCK_SETTINGS)
+    const todos = todoService.parseTodos(taskFile.content)
+    expect(todos.length).toBe(1)
+    todos[0].file = taskFile
+    await todoService.saveTodos(todoFile, todos)
+
+    // Assert
+    const expected = `- [Tasks.md](/Tasks.md)
+\t- [ ] task item
 `
 
     const actual = todoFile.content

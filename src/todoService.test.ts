@@ -353,6 +353,12 @@ describe("TodoService", () => {
 - some list
     - more lists
         - [ ] task item
+- some list
+    - [ ] another task item
+        - [ ] nested task item
+- [ ] top task item
+    - [ ] mid task item
+        - [ ] bottom task item
     `)
     const todoFile = createMockFile("TODO.md", "")
     const mockFileService = new MockFileService([taskFile, todoFile])
@@ -367,6 +373,11 @@ describe("TodoService", () => {
     // Assert
     const expected = `- [Tasks.md](/Tasks.md)
 \t- [ ] task item
+\t- [ ] another task item
+\t    - [ ] nested task item
+\t - [ ] top task item
+\t    - [ ] mid task item
+\t        - [ ] bottom task item
 `
 
     const actual = todoFile.content

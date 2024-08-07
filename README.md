@@ -51,6 +51,8 @@ Remember to run `npm run dev` while developing or you won't see your changes in 
 
 ### Release
 
+**Note: releases are now done using GitHub Actions and Releases.**
+
 To update the package version:
 ```shell
 npm version [major|minor|patch]

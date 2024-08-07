@@ -9,6 +9,12 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings()
 
+		// TODO(joeriddles): only re-run updateTodo for changed file(s)
+		this.registerEvent(this.app.vault.on("create", this.updateTodo))
+		this.registerEvent(this.app.vault.on("delete", this.updateTodo))
+		this.registerEvent(this.app.vault.on("modify", this.updateTodo))
+		this.registerEvent(this.app.vault.on("rename", this.updateTodo))
+
 		this.addCommand({
 			id: 'update-todo',
 			name: 'Update TODO',

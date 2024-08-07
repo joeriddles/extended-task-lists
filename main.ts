@@ -9,16 +9,31 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings()
 
+		// ignore create events on vault load
+		this.app.workspace.onLayoutReady(() => {
+			this.registerEvent(this.app.vault.on("create", this.updateTodoFile))
+		})
+
 		// TODO(joeriddles): only re-run updateTodo for changed file(s)
-		this.registerEvent(this.app.vault.on("create", this.updateTodo))
-		this.registerEvent(this.app.vault.on("delete", this.updateTodo))
-		this.registerEvent(this.app.vault.on("modify", this.updateTodo))
-		this.registerEvent(this.app.vault.on("rename", this.updateTodo))
+		this.registerEvent(this.app.vault.on("delete", this.updateTodoFile))
+		this.registerEvent(this.app.vault.on("rename", this.updateTodoFile))
+
+		this.registerEvent(this.app.vault.on("modify", async (file) => {
+			if (file.name !== this.settings.todoFilename || !(file instanceof TFile)) {
+				await this.updateTodoFile();
+				return
+			}
+
+			const hasChanges = await this.onTodoFileUpdated(file);
+			if (hasChanges) {
+				await this.updateTodoFile();
+			}
+		}))
 
 		this.addCommand({
 			id: 'update-todo',
 			name: 'Update TODO',
-			callback: this.updateTodo,
+			callback: this.updateTodoFile,
 		})
 
 		this.addSettingTab(new ExtendedTaskListsSettingTab(this.app, this))
@@ -81,7 +96,7 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 		await this.saveData(this.settings)
 	}
 
-	updateTodo = async () => {
+	updateTodoFile = async () => {
 		const vault = this.app.vault
 		const fileService = new VaultFileService(vault)
 		const service = new TodoService(fileService, this.settings)
@@ -95,6 +110,31 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 			.reduce((prev, cur) => prev.concat(cur), [])
 		const todoFile = await this.getOrCreateTodoFile(vault);
 		await service.saveTodos(todoFile as IFile, todos)
+	}
+
+	onTodoFileUpdated = async (todoFile: TFile): Promise<boolean> => {
+		const vault = this.app.vault
+		const fileService = new VaultFileService(vault)
+		const contents = await fileService.readFile(todoFile as IFile)
+		const service = new TodoService(fileService, this.settings)
+		const todosByFilePath = service.parseTodoFile(contents)
+
+		const hasUpdates = false
+		todosByFilePath.forEach(async (todos, filepath) => {
+			const includedTaskTypes = service.getIncludedTaskTypes()
+			const updatedTodos = todos.filter(todo => !includedTaskTypes.has(todo.task))
+
+			if (updatedTodos.length === 0) return
+
+			const file = await fileService.getFileByPath(filepath)
+			if (file == null) return
+
+			const fileContent = await fileService.readFile(file)
+			const newFileContent = await service.updateTodos(fileContent, updatedTodos)
+			await fileService.updateFile(file, newFileContent)
+		})
+
+		return hasUpdates
 	}
 
 	getOrCreateTodoFile = async (vault: Vault): Promise<TFile> => {

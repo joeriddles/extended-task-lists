@@ -9,6 +9,7 @@ interface IFile {
 }
 
 interface IFileService {
+  getFileByPath(path: string): Promise<IFile | null>
   getFiles(): Promise<IFile[]>
   readFile(file: IFile): Promise<string>
   updateFile(file: IFile, data: string): Promise<void>
@@ -20,6 +21,12 @@ class VaultFileService implements VaultFileService {
 
   constructor(vault: Vault) {
     this.vault = vault
+  }
+
+  async getFileByPath(path: string): Promise<IFile | null> {
+    const file = this.vault.getAbstractFileByPath(path)
+    if (!(file instanceof TFile)) return null
+    return file as IFile
   }
 
   async getFiles(): Promise<IFile[]> {

@@ -31,6 +31,7 @@ interface IndexMatch {
 }
 
 const TODO_PATTERN = /^(?<indentation>\s*)-\s?\[(?<task>.)\]\s+(?<text>.*)$/
+const LINK_PATTERN = /^- \[.*\]\((?<path>.*)\)$/
 
 class TodoService {
   private fileService: IFileService
@@ -67,6 +68,34 @@ class TodoService {
   }
 
   /**
+   * Parse the auto-generated TODO file
+   */
+  parseTodoFile(contents: string): Map<string, Todo[]> {
+    const lines = contents.split(/[\r]?[\n]/)
+    const files: Map<string, Todo[]> = new Map()
+    let currentFilePath = ""
+    lines.forEach((line, index) => {
+      let match = line.match(LINK_PATTERN)
+      if (match != null) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const encodedfilePath = match.groups!.path
+        const filePath = decodeURI(encodedfilePath)
+        currentFilePath = filePath
+        files.set(currentFilePath, [])
+        return
+      }
+
+      match = line.match(TODO_PATTERN)
+      if (match != null) {
+        const todo = this.parseTodo({ match, index } as IndexMatch)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        files.get(currentFilePath)!.push(todo)
+      }
+    })
+    return files;
+  }
+
+  /**
    * Parse all the task items from the string
    */
   parseTodos(contents: string): Todo[] {
@@ -78,13 +107,7 @@ class TodoService {
       })
       .filter(indexMatch => indexMatch.match != null)
 
-    const todos = matchesAndIndices.map(indexMatch => {
-      const lineno = indexMatch.index
-      const task = indexMatch.match.groups?.task
-      const text = indexMatch.match.groups?.text
-      const indentation = indexMatch.match.groups?.indentation
-      return { task, text, indentation, lineno } as Todo
-    })
+    const todos = matchesAndIndices.map(this.parseTodo)
 
     const todoToPrevSibling: Map<Todo, Todo | null> = new Map()
     todos.forEach(todo => {
@@ -105,6 +128,34 @@ class TodoService {
     return todos
   }
 
+  private parseTodo(match: IndexMatch): Todo {
+    const lineno = match.index
+    const task = match.match.groups?.task
+    const text = match.match.groups?.text
+    const indentation = match.match.groups?.indentation
+    return { task, text, indentation, lineno } as Todo
+  }
+
+  /**
+   * Find and update the task item in the file
+   */
+  async updateTodos(contents: string, updates: Todo[]): Promise<string> {
+    const lines = contents.split(/[\r]?[\n]/)
+    const newLines = lines.map((line, index) => {
+      const match = line.match(TODO_PATTERN)
+      if (match == null) return line
+
+      const todo = this.parseTodo({ match, index })
+      const update = updates.find(update => update.text === todo.text)
+      if (update == null) return line
+
+      const updatedLine = line.replace(/-\s?\[.\]/, `- [${update.task}]`)
+      return updatedLine
+    })
+    const updatedContent = newLines.join("\n")
+    return updatedContent
+  }
+
   /**
    * Save the task items to the TODO file
    */
@@ -115,12 +166,8 @@ class TodoService {
     todos.sort((a, b) => a.file.stat.ctime - b.file.stat.ctime)
 
     // Exclude finished tasks
-    todos = todos.filter(todo =>
-      (todo.task === TaskType.NotStarted && this.settings.includeNotStarted)
-      || (todo.task === TaskType.InProgress && this.settings.includeInProgress)
-      || (todo.task === TaskType.WontDo && this.settings.includeWontDo)
-      || (todo.task === TaskType.Done && this.settings.includeDone)
-    )
+    const includedTaskTypes = this.getIncludedTaskTypes()
+    todos = todos.filter(todo => includedTaskTypes.has(todo.task))
 
     // Group by file
     const todosByFile: Map<IFile, Todo[]> = new Map()
@@ -148,6 +195,15 @@ class TodoService {
     })
 
     this.fileService.updateFile(todoFile, data)
+  }
+
+  getIncludedTaskTypes(): Set<TaskType> {
+    const taskTypes = new Set<TaskType>();
+    if (this.settings.includeNotStarted) taskTypes.add(TaskType.NotStarted)
+    if (this.settings.includeInProgress) taskTypes.add(TaskType.InProgress)
+    if (this.settings.includeWontDo) taskTypes.add(TaskType.WontDo)
+    if (this.settings.includeDone) taskTypes.add(TaskType.Done)
+    return taskTypes
   }
 
   private async getShouldExcludeFile(file: IFile): Promise<boolean> {
@@ -193,7 +249,6 @@ class TodoService {
     return isFolderExcluded
   }
 }
-
 
 export default TodoService
 export { TaskType }

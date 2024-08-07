@@ -63,6 +63,10 @@ class MockFileService implements IFileService {
     this.files = files
   }
 
+  async getFileByPath(path: string): Promise<IFile | null> {
+    return this.files.find(f => f.path === path) ?? null
+  }
+
   async getFiles(): Promise<IFile[]> {
     return this.files.filter(f => f.name.endsWith(".md"))
   }

@@ -80,6 +80,29 @@ class TodoService {
 		return todoFiles;
 	}
 
+	async findAllTodoFiles(): Promise<IFile[]> {
+		const allFiles = await this.fileService.getFiles();
+		return allFiles.filter(
+			(file) => file.name === this.settings.todoFilename,
+		);
+	}
+
+	filterTodosByScope(todos: Todo[], todoFilePath: string): Todo[] {
+		const normalizedPath = todoFilePath.replace(/^\//, "");
+		const lastSlash = normalizedPath.lastIndexOf("/");
+
+		if (lastSlash < 0) {
+			return [...todos];
+		}
+
+		const folderPrefix = normalizedPath.substring(0, lastSlash + 1);
+
+		return todos.filter((todo) => {
+			const filePath = todo.file.path.replace(/^\//, "");
+			return filePath.startsWith(folderPrefix);
+		});
+	}
+
 	/**
 	 * Parse the auto-generated TODO file
 	 */

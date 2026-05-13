@@ -11,6 +11,8 @@ const MOCK_SETTINGS = {
 	excludeRegionEnd: "%% exclude: end %%",
 	useFullFilepath: false,
 	useHierarchy: false,
+	enableNestedTodos: false,
+	excludeNestedFromParent: true,
 	includeNotStarted: true,
 	includeInProgress: true,
 	includeWontDo: false,
@@ -74,11 +76,11 @@ class MockFileService implements IFileService {
 	}
 
 	async readFile(file: IFile): Promise<string> {
-		return this.files.filter((f) => f.name === file.name)[0].content;
+		return this.files.filter((f) => f.path === file.path)[0].content;
 	}
 
 	async updateFile(file: IFile, data: string): Promise<void> {
-		this.files.filter((f) => f.name === file.name)[0].content = data;
+		this.files.filter((f) => f.path === file.path)[0].content = data;
 	}
 
 	async checkExists(filepath: string): Promise<boolean> {
@@ -683,6 +685,197 @@ describe("TodoService", () => {
 
 		const actual = todoFile.content;
 		expect(actual).toEqual(expected);
+	});
+
+	test("findAllTodoFiles returns all TODO.md files including nested ones", async () => {
+		// Arrange
+		const rootTodo = createMockFile("TODO.md", "");
+		const folder = createMockFile("Projects", "");
+		const nestedTodo = createMockFile("TODO.md", "", folder);
+		const tasksFile = createMockFile("Tasks.md", "", folder);
+
+		const mockFileService = new MockFileService([
+			rootTodo,
+			folder,
+			nestedTodo,
+			tasksFile,
+		]);
+
+		// Act
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+		const actual = await todoService.findAllTodoFiles();
+
+		// Assert
+		expect(actual).toEqual([rootTodo, nestedTodo]);
+	});
+
+	test("filterTodosByScope returns all todos for root TODO.md", () => {
+		// Arrange
+		const folderA = createMockFile("FolderA", "");
+		const fileA = createMockFile("Tasks.md", "", folderA);
+		const fileRoot = createMockFile("Notes.md", "");
+
+		const todos: Todo[] = [
+			{
+				task: TaskType.NotStarted,
+				text: "task A",
+				indentation: "",
+				lineno: 0,
+				file: fileA,
+			},
+			{
+				task: TaskType.NotStarted,
+				text: "root task",
+				indentation: "",
+				lineno: 0,
+				file: fileRoot,
+			},
+		];
+
+		const mockFileService = new MockFileService([]);
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+
+		// Act
+		const actual = todoService.filterTodosByScope(todos, "/TODO.md");
+
+		// Assert
+		expect(actual).toEqual(todos);
+	});
+
+	test("filterTodosByScope returns only folder-scoped todos for nested TODO.md", () => {
+		// Arrange
+		const projects = createMockFile("Projects", "");
+		const fileA = createMockFile("api.md", "", projects);
+		const notes = createMockFile("Notes", "");
+		const fileB = createMockFile("diary.md", "", notes);
+
+		const todoA: Todo = {
+			task: TaskType.NotStarted,
+			text: "api task",
+			indentation: "",
+			lineno: 0,
+			file: fileA,
+		};
+		const todoB: Todo = {
+			task: TaskType.NotStarted,
+			text: "diary task",
+			indentation: "",
+			lineno: 0,
+			file: fileB,
+		};
+
+		const mockFileService = new MockFileService([]);
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+
+		// Act
+		const actual = todoService.filterTodosByScope(
+			[todoA, todoB],
+			"/Projects/TODO.md",
+		);
+
+		// Assert
+		expect(actual).toEqual([todoA]);
+	});
+
+	test("filterTodosByScope handles deeply nested scope", () => {
+		// Arrange
+		const projects = createMockFile("Projects", "");
+		const backend = createMockFile("Backend", "", projects);
+		const fileDeep = createMockFile("db.md", "", backend);
+		const fileShallow = createMockFile("api.md", "", projects);
+
+		const todoDeep: Todo = {
+			task: TaskType.NotStarted,
+			text: "db task",
+			indentation: "",
+			lineno: 0,
+			file: fileDeep,
+		};
+		const todoShallow: Todo = {
+			task: TaskType.NotStarted,
+			text: "api task",
+			indentation: "",
+			lineno: 0,
+			file: fileShallow,
+		};
+
+		const mockFileService = new MockFileService([]);
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+
+		// Act
+		const actual = todoService.filterTodosByScope(
+			[todoDeep, todoShallow],
+			"/Projects/Backend/TODO.md",
+		);
+
+		// Assert
+		expect(actual).toEqual([todoDeep]);
+	});
+
+	test("filterTodosByScope handles paths without leading slash", () => {
+		// Arrange
+		const projects = createMockFile("Projects", "");
+		const fileA = createMockFile("api.md", "", projects);
+		// Simulate Obsidian-style paths (no leading slash)
+		(fileA as MockFile).path = "Projects/api.md";
+
+		const todo: Todo = {
+			task: TaskType.NotStarted,
+			text: "api task",
+			indentation: "",
+			lineno: 0,
+			file: fileA,
+		};
+
+		const mockFileService = new MockFileService([]);
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+
+		// Act
+		const actual = todoService.filterTodosByScope(
+			[todo],
+			"Projects/TODO.md",
+		);
+
+		// Assert
+		expect(actual).toEqual([todo]);
+	});
+
+	test("saveTodos writes scoped todos to nested TODO.md", async () => {
+		// Arrange
+		const projects = createMockFile("Projects", "");
+		const fileA = createMockFile("api.md", "", projects);
+		const notes = createMockFile("Notes", "");
+		const fileB = createMockFile("diary.md", "", notes);
+
+		const todoA: Todo = {
+			task: TaskType.NotStarted,
+			text: "api task",
+			indentation: "",
+			lineno: 0,
+			file: fileA,
+		};
+		const todoB: Todo = {
+			task: TaskType.NotStarted,
+			text: "diary task",
+			indentation: "",
+			lineno: 0,
+			file: fileB,
+		};
+
+		const nestedTodo = createMockFile("TODO.md", "", projects);
+		const mockFileService = new MockFileService([nestedTodo]);
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+
+		// Act
+		const scoped = todoService.filterTodosByScope(
+			[todoA, todoB],
+			nestedTodo.path,
+		);
+		await todoService.saveTodos(nestedTodo, scoped);
+
+		// Assert
+		const expected = `- [api.md](/Projects/api.md)\n\t- [ ] api task\n`;
+		expect(nestedTodo.content).toEqual(expected);
 	});
 
 	test("Whole shebang formats TODO.md correctly with task items nested under normal lists", async () => {

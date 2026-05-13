@@ -4,6 +4,8 @@ interface ExtendedTaskListsSettings {
 	todoFilename: string;
 	useFullFilepath: boolean;
 	useHierarchy: boolean;
+	enableNestedTodos: boolean;
+	excludeNestedFromParent: boolean;
 	excludeFilePattern: string;
 	excludeFolderFilename: string;
 	excludeRegionBegin: string;
@@ -18,6 +20,8 @@ const DEFAULT_SETTINGS: ExtendedTaskListsSettings = {
 	todoFilename: "TODO.md",
 	useFullFilepath: false,
 	useHierarchy: false,
+	enableNestedTodos: false,
+	excludeNestedFromParent: true,
 	excludeFilePattern: "<!-- exclude TODO -->",
 	excludeFolderFilename: ".exclude_todos",
 	excludeRegionBegin: "%% exclude: start %%",
@@ -81,6 +85,34 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.useHierarchy)
 					.onChange(async (value) => {
 						this.plugin.settings.useHierarchy = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Enable nested TODOs")
+			.setDesc(
+				"When enabled, any TODO file you create in a subfolder will be populated with task items from that folder and its subfolders.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableNestedTodos)
+					.onChange(async (value) => {
+						this.plugin.settings.enableNestedTodos = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Exclude nested from parent")
+			.setDesc(
+				"When enabled, task items that appear in a nested TODO file are excluded from ancestor TODO files to avoid duplication.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.excludeNestedFromParent)
+					.onChange(async (value) => {
+						this.plugin.settings.excludeNestedFromParent = value;
 						await this.plugin.saveSettings();
 					}),
 			);

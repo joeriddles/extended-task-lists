@@ -9,6 +9,7 @@ import TodoService, { Todo } from "src/todoService";
 
 export default class ExtendedTaskListsPlugin extends Plugin {
 	settings!: ExtendedTaskListsSettings;
+	private isUpdating = false;
 
 	async onload() {
 		await this.loadSettings();
@@ -117,20 +118,83 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 	}
 
 	updateTodoFile = async () => {
+		if (this.isUpdating) return;
+		this.isUpdating = true;
+		try {
+			await this.doUpdateTodoFile();
+		} finally {
+			this.isUpdating = false;
+		}
+	};
+
+	private async doUpdateTodoFile() {
 		const vault = this.app.vault;
 		const fileService = new VaultFileService(vault);
 		const service = new TodoService(fileService, this.settings);
-		const todoFiles = await service.findTodosFiles();
-		const todos: Todo[] = todoFiles
+		const sourceFiles = await service.findTodosFiles();
+		const allTodos: Todo[] = sourceFiles
 			.map((todoFile) => {
 				const todos = service.parseTodos(todoFile.contents);
 				todos.forEach((todo) => (todo.file = todoFile.file));
 				return todos;
 			})
 			.reduce((prev, cur) => prev.concat(cur), []);
-		const todoFile = await this.getOrCreateTodoFile(vault);
-		await service.saveTodos(todoFile as IFile, todos);
-	};
+
+		if (!this.settings.enableNestedTodos) {
+			const todoFile = await this.getOrCreateTodoFile(vault);
+			await service.saveTodos(todoFile as IFile, allTodos);
+			return;
+		}
+
+		const allTodoTargets = await service.findAllTodoFiles();
+		const isRootTodoFile = (f: IFile) =>
+			f.path === this.settings.todoFilename ||
+			f.path === "/" + this.settings.todoFilename;
+		const rootTodoFile = allTodoTargets.find(isRootTodoFile);
+		const nestedTodoFiles = allTodoTargets.filter(
+			(f) => !isRootTodoFile(f),
+		);
+
+		const claimedTodoKeys = new Set<string>();
+
+		nestedTodoFiles.sort((a, b) => {
+			const depthA = a.path.split("/").length;
+			const depthB = b.path.split("/").length;
+			return depthB - depthA;
+		});
+
+		for (const nestedTodo of nestedTodoFiles) {
+			let scopedTodos = service.filterTodosByScope(
+				allTodos,
+				nestedTodo.path,
+			);
+
+			if (this.settings.excludeNestedFromParent) {
+				scopedTodos = scopedTodos.filter(
+					(todo) =>
+						!claimedTodoKeys.has(
+							`${todo.file.path}:${todo.lineno}`,
+						),
+				);
+				for (const todo of scopedTodos) {
+					claimedTodoKeys.add(`${todo.file.path}:${todo.lineno}`);
+				}
+			}
+
+			await service.saveTodos(nestedTodo, scopedTodos);
+		}
+
+		const rootFile =
+			rootTodoFile ?? ((await this.getOrCreateTodoFile(vault)) as IFile);
+		let rootTodos = allTodos;
+		if (this.settings.excludeNestedFromParent && claimedTodoKeys.size > 0) {
+			rootTodos = allTodos.filter(
+				(todo) =>
+					!claimedTodoKeys.has(`${todo.file.path}:${todo.lineno}`),
+			);
+		}
+		await service.saveTodos(rootFile, rootTodos);
+	}
 
 	onTodoFileUpdated = async (todoFile: TFile): Promise<boolean> => {
 		const vault = this.app.vault;

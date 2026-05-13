@@ -10,8 +10,8 @@ Extended Task Lists
   - in-progress syntax: `- [.] In progress`
   - won't do syntax: `- [~] Won't do`
   - Now supports live preview mode (as of release 1.0.4)!
-- 🌟 Generate a top-level TODO file by scanning all tasks lists in markdown files
-  - Run using the command "Extended Task Lists: Update TODO"
+- 🌟 Generate a top-level `TODO.md` file by scanning all tasks lists in markdown files
+  - Run using the command `Extended Task Lists: Update TODO`
 
 ### To use
 
@@ -26,11 +26,11 @@ Simply add an in-progress or won't do task item:
 ```
 
 #### Generate `TODO.md`
-Open the command palette (`Ctrl/Cmd + P` by default) and run the "Extended Task Lists: Generate TODO" command.
+Open the command palette (`Ctrl/Cmd + P` by default) and run the `Extended Task Lists: Generate TODO` command.
 
 The generated filename can be configured in the plugin settings, as well as what task item types are included. By default, done and won't do task items are excluded.
 
-To exclude a markdown file's task items from being included in the generated TODO file, add `<!-- exclude TODO -->` anywhere in the markdown file. To exclude are markdown files in a folder, add an empty `.exclude_todos` file in the folder.
+To exclude a markdown file's task items from being included in the generated `TODO.md` file, add `<!-- exclude TODO -->` anywhere in the markdown file. To exclude are markdown files in a folder, add an empty `.exclude_todos` file in the folder.
 
 ### Development
 

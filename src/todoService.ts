@@ -126,7 +126,10 @@ class TodoService {
 					if (endPattern && line.trim() === endPattern) {
 						inExcludedRegion = false;
 					}
-					return { match: null as unknown as RegExpMatchArray, index } as IndexMatch;
+					return {
+						match: null as unknown as RegExpMatchArray,
+						index,
+					} as IndexMatch;
 				}
 				const match = line.match(TODO_PATTERN);
 				return { match, index } as IndexMatch;

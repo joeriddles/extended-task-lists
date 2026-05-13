@@ -433,11 +433,7 @@ describe("TodoService", () => {
 		const actual = todoService.parseTodos(content);
 
 		// Assert
-		expect(actual.map((t) => t.text)).toEqual([
-			"First",
-			"Second",
-			"Third",
-		]);
+		expect(actual.map((t) => t.text)).toEqual(["First", "Second", "Third"]);
 	});
 
 	test("parseTodos excludes to end of file when region is not closed", () => {

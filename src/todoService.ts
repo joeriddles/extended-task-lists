@@ -216,7 +216,9 @@ class TodoService {
 			});
 		});
 
-		this.fileService.updateFile(todoFile, data);
+		this.fileService
+			.updateFile(todoFile, data)
+			.catch((err) => console.error(err));
 	}
 
 	getIncludedTaskTypes(): Set<TaskType> {

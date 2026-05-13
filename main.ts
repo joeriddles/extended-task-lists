@@ -167,13 +167,13 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 		let todoFile: TFile;
 		try {
 			todoFile = await vault.create(this.settings.todoFilename, "");
-		} catch (_e) {
+		} catch (e) {
 			const todoFileOrNull = vault.getAbstractFileByPath(
 				this.settings.todoFilename,
 			);
 			if (todoFileOrNull == null) {
 				throw new Error(
-					`Could not get or create the TODO file: ${this.settings.todoFilename}`,
+					`Could not get or create the TODO file: ${this.settings.todoFilename}: ${e}`,
 				);
 			} else if (!(todoFileOrNull instanceof TFile)) {
 				throw new Error(

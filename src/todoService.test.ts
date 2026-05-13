@@ -878,6 +878,42 @@ describe("TodoService", () => {
 		expect(nestedTodo.content).toEqual(expected);
 	});
 
+	test("saveTodos with useHierarchy and nested TODO strips scope prefix", async () => {
+		// Arrange
+		const year = createMockFile("2026", "");
+		const month = createMockFile("05_May", "", year);
+		const dayFile = createMockFile("12_Tuesday.md", "", month);
+
+		const todos = [
+			{
+				task: TaskType.NotStarted,
+				text: "do the thing",
+				indentation: "",
+				lineno: 0,
+				file: dayFile,
+			} as Todo,
+		];
+
+		const nestedTodo = createMockFile("TODO.md", "", month);
+		const mockFileService = new MockFileService([nestedTodo]);
+
+		const settings = {
+			...MOCK_SETTINGS,
+			useHierarchy: true,
+		};
+
+		// Act
+		const todoService = new TodoService(mockFileService, settings);
+		await todoService.saveTodos(nestedTodo, todos);
+
+		// Assert — hierarchy should be relative to the TODO's folder
+		const expected = `- [12_Tuesday.md](/2026/05_May/12_Tuesday.md)
+\t- [ ] do the thing
+`;
+
+		expect(nestedTodo.content).toEqual(expected);
+	});
+
 	test("Whole shebang formats TODO.md correctly with task items nested under normal lists", async () => {
 		// Arrange
 		const taskFile = createMockFile(

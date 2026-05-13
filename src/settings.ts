@@ -99,8 +99,6 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl).setName("Includes").setHeading();
-
 		new Setting(containerEl)
 			.setName("Exclude region begin")
 			.setDesc(
@@ -128,6 +126,8 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+
+		new Setting(containerEl).setName("Includes").setHeading();
 
 		new Setting(containerEl)
 			.setName("Include not started tasks")

@@ -37,14 +37,14 @@ class VaultFileService implements VaultFileService {
 		if (file instanceof TFile) {
 			return await this.vault.cachedRead(file);
 		}
-		return Promise.reject("not a TFile");
+		return Promise.reject(new Error("not a TFile"));
 	}
 
 	async updateFile(file: IFile, data: string): Promise<void> {
 		if (file instanceof TFile) {
 			await this.vault.modify(file, data);
 		}
-		return Promise.reject("not a TFile");
+		return Promise.reject(new Error("not a TFile"));
 	}
 
 	async checkExists(filepath: string): Promise<boolean> {

@@ -80,6 +80,29 @@ class TodoService {
 		return todoFiles;
 	}
 
+	async findAllTodoFiles(): Promise<IFile[]> {
+		const allFiles = await this.fileService.getFiles();
+		return allFiles.filter(
+			(file) => file.name === this.settings.todoFilename,
+		);
+	}
+
+	filterTodosByScope(todos: Todo[], todoFilePath: string): Todo[] {
+		const normalizedPath = todoFilePath.replace(/^\//, "");
+		const lastSlash = normalizedPath.lastIndexOf("/");
+
+		if (lastSlash < 0) {
+			return [...todos];
+		}
+
+		const folderPrefix = normalizedPath.substring(0, lastSlash + 1);
+
+		return todos.filter((todo) => {
+			const filePath = todo.file.path.replace(/^\//, "");
+			return filePath.startsWith(folderPrefix);
+		});
+	}
+
 	/**
 	 * Parse the auto-generated TODO file
 	 */
@@ -218,7 +241,7 @@ class TodoService {
 		});
 
 		if (this.settings.useHierarchy) {
-			data = this.formatHierarchy(todosByFile);
+			data = this.formatHierarchy(todosByFile, todoFile);
 		} else {
 			todosByFile.forEach((todos, file) => {
 				const urlEncodedFilePath = encodeURI(file.path);
@@ -240,17 +263,26 @@ class TodoService {
 			.catch((err) => console.error(err));
 	}
 
-	private formatHierarchy(todosByFile: Map<IFile, Todo[]>): string {
+	private formatHierarchy(
+		todosByFile: Map<IFile, Todo[]>,
+		todoFile: IFile,
+	): string {
 		interface FolderNode {
 			name: string;
 			children: Map<string, FolderNode>;
 			files: { file: IFile; todos: Todo[] }[];
 		}
 
+		const todoDir = todoFile.path.replace(/^\//, "").replace(/[^/]+$/, "");
+
 		const root: FolderNode = { name: "", children: new Map(), files: [] };
 
 		todosByFile.forEach((todos, file) => {
-			const parts = file.path.replace(/^\//, "").split("/");
+			let relativePath = file.path.replace(/^\//, "");
+			if (todoDir && relativePath.startsWith(todoDir)) {
+				relativePath = relativePath.substring(todoDir.length);
+			}
+			const parts = relativePath.split("/");
 			parts.pop();
 			let node = root;
 			for (const part of parts) {

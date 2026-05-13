@@ -2,11 +2,12 @@ import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
 
 interface ExtendedTaskListsSettings {
 	todoFilename: string;
+	useFullFilepath: boolean;
+	useHierarchy: boolean;
 	excludeFilePattern: string;
 	excludeFolderFilename: string;
 	excludeRegionBegin: string;
 	excludeRegionEnd: string;
-	useFullFilepath: boolean;
 	includeNotStarted: boolean;
 	includeInProgress: boolean;
 	includeWontDo: boolean;
@@ -15,11 +16,12 @@ interface ExtendedTaskListsSettings {
 
 const DEFAULT_SETTINGS: ExtendedTaskListsSettings = {
 	todoFilename: "TODO.md",
+	useFullFilepath: false,
+	useHierarchy: false,
 	excludeFilePattern: "<!-- exclude TODO -->",
 	excludeFolderFilename: ".exclude_todos",
 	excludeRegionBegin: "%% exclude: start %%",
 	excludeRegionEnd: "%% exclude: end %%",
-	useFullFilepath: false,
 	includeNotStarted: true,
 	includeInProgress: true,
 	includeWontDo: false,
@@ -65,6 +67,20 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.useFullFilepath)
 					.onChange(async (value) => {
 						this.plugin.settings.useFullFilepath = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Use hierarchy")
+			.setDesc(
+				"If checked, task items in the generated TODO file are organized according to the folder structure of the Vault.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.useHierarchy)
+					.onChange(async (value) => {
+						this.plugin.settings.useHierarchy = value;
 						await this.plugin.saveSettings();
 					}),
 			);

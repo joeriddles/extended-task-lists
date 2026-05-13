@@ -10,6 +10,7 @@ const MOCK_SETTINGS = {
 	excludeRegionBegin: "%% exclude: start %%",
 	excludeRegionEnd: "%% exclude: end %%",
 	useFullFilepath: false,
+	useHierarchy: false,
 	includeNotStarted: true,
 	includeInProgress: true,
 	includeWontDo: false,
@@ -450,6 +451,238 @@ describe("TodoService", () => {
 
 		// Assert
 		expect(actual.map((t) => t.text)).toEqual(["Included"]);
+	});
+
+	test("saveTodos with useHierarchy organizes by folder structure", async () => {
+		// Arrange
+		const year = createMockFile("2022", "");
+		const month = createMockFile("06_June", "", year);
+		const dayFile = createMockFile("08_Wednesday.md", "", month);
+
+		const todos = [
+			{
+				task: TaskType.NotStarted,
+				text: "do the thing",
+				indentation: "",
+				lineno: 0,
+				file: dayFile,
+			} as Todo,
+		];
+
+		const todoFile = createMockFile("TODO.md", "");
+		const mockFileService = new MockFileService([todoFile]);
+
+		const settings = {
+			...MOCK_SETTINGS,
+			useHierarchy: true,
+		};
+
+		// Act
+		const todoService = new TodoService(mockFileService, settings);
+		await todoService.saveTodos(todoFile, todos);
+
+		// Assert
+		const expected = `- 2022
+\t- 06_June
+\t\t- [08_Wednesday.md](/2022/06_June/08_Wednesday.md)
+\t\t\t- [ ] do the thing
+`;
+
+		const actual = todoFile.content;
+		expect(actual).toEqual(expected);
+	});
+
+	test("saveTodos with useHierarchy handles multiple files in different folders", async () => {
+		// Arrange
+		const folderA = createMockFile("FolderA", "");
+		const fileA = createMockFile("Tasks.md", "", folderA);
+
+		const folderB = createMockFile("FolderB", "");
+		const fileB = createMockFile("Notes.md", "", folderB);
+
+		const todos = [
+			{
+				task: TaskType.NotStarted,
+				text: "task A",
+				indentation: "",
+				lineno: 0,
+				file: fileA,
+			} as Todo,
+			{
+				task: TaskType.NotStarted,
+				text: "task B",
+				indentation: "",
+				lineno: 0,
+				file: fileB,
+			} as Todo,
+		];
+
+		const todoFile = createMockFile("TODO.md", "");
+		const mockFileService = new MockFileService([todoFile]);
+
+		const settings = {
+			...MOCK_SETTINGS,
+			useHierarchy: true,
+		};
+
+		// Act
+		const todoService = new TodoService(mockFileService, settings);
+		await todoService.saveTodos(todoFile, todos);
+
+		// Assert
+		const expected = `- FolderA
+\t- [Tasks.md](/FolderA/Tasks.md)
+\t\t- [ ] task A
+- FolderB
+\t- [Notes.md](/FolderB/Notes.md)
+\t\t- [ ] task B
+`;
+
+		const actual = todoFile.content;
+		expect(actual).toEqual(expected);
+	});
+
+	test("saveTodos with useHierarchy handles files at root level", async () => {
+		// Arrange
+		const rootFile = createMockFile("Tasks.md", "");
+		const folder = createMockFile("Folder", "");
+		const nestedFile = createMockFile("Notes.md", "", folder);
+
+		const todos = [
+			{
+				task: TaskType.NotStarted,
+				text: "root task",
+				indentation: "",
+				lineno: 0,
+				file: rootFile,
+			} as Todo,
+			{
+				task: TaskType.NotStarted,
+				text: "nested task",
+				indentation: "",
+				lineno: 0,
+				file: nestedFile,
+			} as Todo,
+		];
+
+		const todoFile = createMockFile("TODO.md", "");
+		const mockFileService = new MockFileService([todoFile]);
+
+		const settings = {
+			...MOCK_SETTINGS,
+			useHierarchy: true,
+		};
+
+		// Act
+		const todoService = new TodoService(mockFileService, settings);
+		await todoService.saveTodos(todoFile, todos);
+
+		// Assert
+		const expected = `- Folder
+\t- [Notes.md](/Folder/Notes.md)
+\t\t- [ ] nested task
+- [Tasks.md](/Tasks.md)
+\t- [ ] root task
+`;
+
+		const actual = todoFile.content;
+		expect(actual).toEqual(expected);
+	});
+
+	test("saveTodos with useHierarchy preserves nested todo indentation", async () => {
+		// Arrange
+		const folder = createMockFile("Projects", "");
+		const file = createMockFile("Work.md", "", folder);
+
+		const todos = [
+			{
+				task: TaskType.NotStarted,
+				text: "parent task",
+				indentation: "",
+				lineno: 0,
+				file: file,
+			} as Todo,
+			{
+				task: TaskType.InProgress,
+				text: "child task",
+				indentation: "    ",
+				lineno: 1,
+				file: file,
+			} as Todo,
+		];
+
+		const todoFile = createMockFile("TODO.md", "");
+		const mockFileService = new MockFileService([todoFile]);
+
+		const settings = {
+			...MOCK_SETTINGS,
+			useHierarchy: true,
+		};
+
+		// Act
+		const todoService = new TodoService(mockFileService, settings);
+		await todoService.saveTodos(todoFile, todos);
+
+		// Assert
+		const expected = `- Projects
+\t- [Work.md](/Projects/Work.md)
+\t\t- [ ] parent task
+\t\t    - [.] child task
+`;
+
+		const actual = todoFile.content;
+		expect(actual).toEqual(expected);
+	});
+
+	test("saveTodos with useHierarchy shares common folder prefixes", async () => {
+		// Arrange
+		const folder = createMockFile("2022", "");
+		const sub1 = createMockFile("Q1", "", folder);
+		const sub2 = createMockFile("Q2", "", folder);
+		const file1 = createMockFile("Jan.md", "", sub1);
+		const file2 = createMockFile("Apr.md", "", sub2);
+
+		const todos = [
+			{
+				task: TaskType.NotStarted,
+				text: "jan task",
+				indentation: "",
+				lineno: 0,
+				file: file1,
+			} as Todo,
+			{
+				task: TaskType.NotStarted,
+				text: "apr task",
+				indentation: "",
+				lineno: 0,
+				file: file2,
+			} as Todo,
+		];
+
+		const todoFile = createMockFile("TODO.md", "");
+		const mockFileService = new MockFileService([todoFile]);
+
+		const settings = {
+			...MOCK_SETTINGS,
+			useHierarchy: true,
+		};
+
+		// Act
+		const todoService = new TodoService(mockFileService, settings);
+		await todoService.saveTodos(todoFile, todos);
+
+		// Assert
+		const expected = `- 2022
+\t- Q1
+\t\t- [Jan.md](/2022/Q1/Jan.md)
+\t\t\t- [ ] jan task
+\t- Q2
+\t\t- [Apr.md](/2022/Q2/Apr.md)
+\t\t\t- [ ] apr task
+`;
+
+		const actual = todoFile.content;
+		expect(actual).toEqual(expected);
 	});
 
 	test("Whole shebang formats TODO.md correctly with task items nested under normal lists", async () => {

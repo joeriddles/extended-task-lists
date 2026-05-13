@@ -217,23 +217,81 @@ class TodoService {
 			}
 		});
 
-		todosByFile.forEach((todos, file) => {
-			const urlEncodedFilePath = encodeURI(file.path);
+		if (this.settings.useHierarchy) {
+			data = this.formatHierarchy(todosByFile);
+		} else {
+			todosByFile.forEach((todos, file) => {
+				const urlEncodedFilePath = encodeURI(file.path);
 
-			const heading = this.settings.useFullFilepath
-				? `- [${file.path}](${urlEncodedFilePath})\n`
-				: `- [${file.basename}](${urlEncodedFilePath})\n`;
+				const heading = this.settings.useFullFilepath
+					? `- [${file.path}](${urlEncodedFilePath})\n`
+					: `- [${file.basename}](${urlEncodedFilePath})\n`;
 
-			data += heading;
+				data += heading;
 
-			todos.forEach((todo) => {
-				data += `\t${todo.indentation}- [${todo.task}] ${todo.text}\n`;
+				todos.forEach((todo) => {
+					data += `\t${todo.indentation}- [${todo.task}] ${todo.text}\n`;
+				});
 			});
-		});
+		}
 
 		this.fileService
 			.updateFile(todoFile, data)
 			.catch((err) => console.error(err));
+	}
+
+	private formatHierarchy(todosByFile: Map<IFile, Todo[]>): string {
+		interface FolderNode {
+			name: string;
+			children: Map<string, FolderNode>;
+			files: { file: IFile; todos: Todo[] }[];
+		}
+
+		const root: FolderNode = { name: "", children: new Map(), files: [] };
+
+		todosByFile.forEach((todos, file) => {
+			const parts = file.path.replace(/^\//, "").split("/");
+			parts.pop();
+			let node = root;
+			for (const part of parts) {
+				if (!node.children.has(part)) {
+					node.children.set(part, {
+						name: part,
+						children: new Map(),
+						files: [],
+					});
+				}
+				const child = node.children.get(part);
+				if (child) {
+					node = child;
+				}
+			}
+			node.files.push({ file, todos });
+		});
+
+		let data = "";
+		const renderNode = (node: FolderNode, depth: number) => {
+			const indent = "\t".repeat(depth);
+
+			const sortedChildren = [...node.children.values()].sort((a, b) =>
+				a.name.localeCompare(b.name),
+			);
+			for (const child of sortedChildren) {
+				data += `${indent}- ${child.name}\n`;
+				renderNode(child, depth + 1);
+			}
+
+			for (const { file, todos } of node.files) {
+				const urlEncodedFilePath = encodeURI(file.path);
+				data += `${indent}- [${file.basename}](${urlEncodedFilePath})\n`;
+				for (const todo of todos) {
+					data += `${indent}\t${todo.indentation}- [${todo.task}] ${todo.text}\n`;
+				}
+			}
+		};
+
+		renderNode(root, 0);
+		return data;
 	}
 
 	getIncludedTaskTypes(): Set<TaskType> {

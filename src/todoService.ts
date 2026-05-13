@@ -121,7 +121,7 @@ class TodoService {
 			})
 			.filter((indexMatch) => indexMatch.match != null);
 
-		const todos = matchesAndIndices.map(this.parseTodo);
+		const todos = matchesAndIndices.map((m) => this.parseTodo(m));
 
 		const todoToPrevSibling: Map<Todo, Todo | null> = new Map();
 		todos.forEach((todo) => {

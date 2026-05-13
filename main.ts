@@ -8,7 +8,7 @@ import {
 import TodoService, { Todo } from "src/todoService";
 
 export default class ExtendedTaskListsPlugin extends Plugin {
-	settings: ExtendedTaskListsSettings;
+	settings!: ExtendedTaskListsSettings;
 
 	async onload() {
 		await this.loadSettings();

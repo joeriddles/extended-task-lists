@@ -4,6 +4,8 @@ interface ExtendedTaskListsSettings {
 	todoFilename: string;
 	excludeFilePattern: string;
 	excludeFolderFilename: string;
+	excludeRegionBegin: string;
+	excludeRegionEnd: string;
 	useFullFilepath: boolean;
 	includeNotStarted: boolean;
 	includeInProgress: boolean;
@@ -15,6 +17,8 @@ const DEFAULT_SETTINGS: ExtendedTaskListsSettings = {
 	todoFilename: "TODO.md",
 	excludeFilePattern: "<!-- exclude TODO -->",
 	excludeFolderFilename: ".exclude_todos",
+	excludeRegionBegin: "%% exclude: start %%",
+	excludeRegionEnd: "%% exclude: end %%",
 	useFullFilepath: false,
 	includeNotStarted: true,
 	includeInProgress: true,
@@ -91,6 +95,34 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.excludeFolderFilename)
 					.onChange(async (value) => {
 						this.plugin.settings.excludeFolderFilename = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Exclude region begin")
+			.setDesc(
+				"A line matching this pattern marks the start of a region whose task items are excluded from the generated TODO file.",
+			)
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.excludeRegionBegin)
+					.onChange(async (value) => {
+						this.plugin.settings.excludeRegionBegin = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Exclude region end")
+			.setDesc(
+				"A line matching this pattern marks the end of an excluded region.",
+			)
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.excludeRegionEnd)
+					.onChange(async (value) => {
+						this.plugin.settings.excludeRegionEnd = value;
 						await this.plugin.saveSettings();
 					}),
 			);

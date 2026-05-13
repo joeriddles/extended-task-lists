@@ -114,8 +114,23 @@ class TodoService {
 	 */
 	parseTodos(contents: string): Todo[] {
 		const lines = contents.split(/[\r]?[\n]/);
+		const beginPattern = this.settings.excludeRegionBegin;
+		const endPattern = this.settings.excludeRegionEnd;
+		let inExcludedRegion = false;
 		const matchesAndIndices = lines
 			.map((line, index) => {
+				if (beginPattern && line.trim() === beginPattern) {
+					inExcludedRegion = true;
+				}
+				if (inExcludedRegion) {
+					if (endPattern && line.trim() === endPattern) {
+						inExcludedRegion = false;
+					}
+					return {
+						match: null as unknown as RegExpMatchArray,
+						index,
+					} as IndexMatch;
+				}
 				const match = line.match(TODO_PATTERN);
 				return { match, index } as IndexMatch;
 			})

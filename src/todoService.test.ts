@@ -7,6 +7,8 @@ const MOCK_SETTINGS = {
 	todoFilename: "TODO.md",
 	excludeFilePattern: "<!-- exclude TODO -->",
 	excludeFolderFilename: ".exclude_todos",
+	excludeRegionBegin: "%% exclude: start %%",
+	excludeRegionEnd: "%% exclude: end %%",
 	useFullFilepath: false,
 	includeNotStarted: true,
 	includeInProgress: true,
@@ -378,6 +380,76 @@ describe("TodoService", () => {
 
 		const actual = todoFile.content;
 		expect(actual).toEqual(expected);
+	});
+
+	test("parseTodos excludes task items inside exclude regions", () => {
+		// Arrange
+		const content = `- [ ] Included
+%% exclude: start %%
+- [ ] Excluded
+- [.] Also excluded
+%% exclude: end %%
+- [ ] Also included`;
+
+		const mockFileService = new MockFileService([]);
+
+		// Act
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+		const actual = todoService.parseTodos(content);
+
+		// Assert
+		expect(actual).toEqual([
+			{
+				task: TaskType.NotStarted,
+				text: "Included",
+				indentation: "",
+				lineno: 0,
+			} as Todo,
+			{
+				task: TaskType.NotStarted,
+				text: "Also included",
+				indentation: "",
+				lineno: 5,
+			} as Todo,
+		]);
+	});
+
+	test("parseTodos handles multiple exclude regions", () => {
+		// Arrange
+		const content = `- [ ] First
+%% exclude: start %%
+- [ ] Excluded 1
+%% exclude: end %%
+- [ ] Second
+%% exclude: start %%
+- [ ] Excluded 2
+%% exclude: end %%
+- [ ] Third`;
+
+		const mockFileService = new MockFileService([]);
+
+		// Act
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+		const actual = todoService.parseTodos(content);
+
+		// Assert
+		expect(actual.map((t) => t.text)).toEqual(["First", "Second", "Third"]);
+	});
+
+	test("parseTodos excludes to end of file when region is not closed", () => {
+		// Arrange
+		const content = `- [ ] Included
+%% exclude: start %%
+- [ ] Excluded`;
+
+		const mockFileService = new MockFileService([]);
+
+		// Act
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+		const actual = todoService.parseTodos(content);
+
+		// Assert
+		expect(actual.map((t) => t.text)).toEqual(["Included"]);
 	});
 
 	test("Whole shebang formats TODO.md correctly with task items nested under normal lists", async () => {

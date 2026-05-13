@@ -139,25 +139,26 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 		const service = new TodoService(fileService, this.settings);
 		const todosByFilePath = service.parseTodoFile(contents);
 
-		const hasUpdates = false;
-		todosByFilePath.forEach(async (todos, filepath) => {
+		let hasUpdates = false;
+		for (const [filepath, todos] of todosByFilePath) {
 			const includedTaskTypes = service.getIncludedTaskTypes();
 			const updatedTodos = todos.filter(
 				(todo) => !includedTaskTypes.has(todo.task),
 			);
 
-			if (updatedTodos.length === 0) return;
+			if (updatedTodos.length === 0) continue;
 
 			const file = await fileService.getFileByPath(filepath);
-			if (file == null) return;
+			if (file == null) continue;
 
+			hasUpdates = true;
 			const fileContent = await fileService.readFile(file);
 			const newFileContent = await service.updateTodos(
 				fileContent,
 				updatedTodos,
 			);
 			await fileService.updateFile(file, newFileContent);
-		});
+		}
 
 		return hasUpdates;
 	};

@@ -52,6 +52,22 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
 		);
 
 		new Setting(containerEl)
+			.setName("Use full filepath")
+			.setDesc(
+				"If checked, the full Vault filepath is used for the label of grouped task items in the generated TODO file",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.useFullFilepath)
+					.onChange(async (value) => {
+						this.plugin.settings.useFullFilepath = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl).setName("Excludes").setHeading();
+
+		new Setting(containerEl)
 			.setName("Exclude file pattern")
 			.setDesc(
 				"A pattern that should be inserted anywhere in a Markdown file to exclude it from the generated TODO file.",
@@ -79,6 +95,8 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
 					}),
 			);
 
+		new Setting(containerEl).setName("Includes").setHeading();
+
 		new Setting(containerEl)
 			.setName("Include not started tasks")
 			.addToggle((toggle) =>
@@ -86,20 +104,6 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.includeNotStarted)
 					.onChange(async (value) => {
 						this.plugin.settings.includeNotStarted = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Use full filepath")
-			.setDesc(
-				"If checked, the full Vault filepath is used for the label of grouped task items in the generated TODO file",
-			)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.useFullFilepath)
-					.onChange(async (value) => {
-						this.plugin.settings.useFullFilepath = value;
 						await this.plugin.saveSettings();
 					}),
 			);

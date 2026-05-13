@@ -166,7 +166,7 @@ export default class ExtendedTaskListsPlugin extends Plugin {
 		let todoFile: TFile;
 		try {
 			todoFile = await vault.create(this.settings.todoFilename, "");
-		} catch (e) {
+		} catch (_e) {
 			const todoFileOrNull = vault.getAbstractFileByPath(
 				this.settings.todoFilename,
 			);

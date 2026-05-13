@@ -33,6 +33,24 @@ interface IndexMatch {
 const TODO_PATTERN = /^(?<indentation>\s*)-\s?\[(?<task>.)\]\s+(?<text>.*)$/;
 const LINK_PATTERN = /^- \[.*\]\((?<path>.*)\)$/;
 
+function alternateCommentStyle(pattern: string): string | null {
+	const obsidianMatch = pattern.match(/^%%\s*(.*?)\s*%%$/);
+	if (obsidianMatch) {
+		return `<!-- ${obsidianMatch[1]} -->`;
+	}
+	const htmlMatch = pattern.match(/^<!--\s*(.*?)\s*-->$/);
+	if (htmlMatch) {
+		return `%% ${htmlMatch[1]} %%`;
+	}
+	return null;
+}
+
+function matchesEitherCommentStyle(line: string, pattern: string): boolean {
+	if (line === pattern) return true;
+	const alt = alternateCommentStyle(pattern);
+	return alt != null && line === alt;
+}
+
 class TodoService {
 	private fileService: IFileService;
 	private settings: ExtendedTaskListsSettings;
@@ -72,9 +90,11 @@ class TodoService {
 			(todoFile) =>
 				!todoFile.contents
 					.split(/[\r\n]+/)
-					.some(
-						(line) =>
-							line.trim() === this.settings.excludeFilePattern,
+					.some((line) =>
+						matchesEitherCommentStyle(
+							line.trim(),
+							this.settings.excludeFilePattern,
+						),
 					),
 		);
 		return todoFiles;
@@ -142,11 +162,17 @@ class TodoService {
 		let inExcludedRegion = false;
 		const matchesAndIndices = lines
 			.map((line, index) => {
-				if (beginPattern && line.trim() === beginPattern) {
+				if (
+					beginPattern &&
+					matchesEitherCommentStyle(line.trim(), beginPattern)
+				) {
 					inExcludedRegion = true;
 				}
 				if (inExcludedRegion) {
-					if (endPattern && line.trim() === endPattern) {
+					if (
+						endPattern &&
+						matchesEitherCommentStyle(line.trim(), endPattern)
+					) {
 						inExcludedRegion = false;
 					}
 					return {

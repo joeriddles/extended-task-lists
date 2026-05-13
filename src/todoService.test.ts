@@ -101,6 +101,27 @@ class MockFileService implements IFileService {
 }
 
 describe("TodoService", () => {
+	test("findTodosFiles excludes files with alternate comment style", async () => {
+		// Arrange
+		const taskFile = createMockFile("test.md", "- [ ] task item");
+		const fileWithObsidianExclude = createMockFile(
+			"Exclude.md",
+			"%% exclude TODO %%",
+		);
+
+		const files = [taskFile, fileWithObsidianExclude];
+		const mockFileService = new MockFileService(files);
+
+		// Act
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+		const actual = await todoService.findTodosFiles();
+
+		// Assert
+		expect(actual).toEqual([
+			{ file: taskFile, contents: "- [ ] task item" } as TodoFile,
+		]);
+	});
+
 	test("findTodosFiles excludes files", async () => {
 		// Arrange
 		const taskFile = createMockFile("test.md", "- [ ] task item");
@@ -383,6 +404,38 @@ describe("TodoService", () => {
 
 		const actual = todoFile.content;
 		expect(actual).toEqual(expected);
+	});
+
+	test("parseTodos excludes task items inside HTML-style exclude regions", () => {
+		// Arrange
+		const content = `- [ ] Included
+<!-- exclude: start -->
+- [ ] Excluded
+- [.] Also excluded
+<!-- exclude: end -->
+- [ ] Also included`;
+
+		const mockFileService = new MockFileService([]);
+
+		// Act
+		const todoService = new TodoService(mockFileService, MOCK_SETTINGS);
+		const actual = todoService.parseTodos(content);
+
+		// Assert
+		expect(actual).toEqual([
+			{
+				task: TaskType.NotStarted,
+				text: "Included",
+				indentation: "",
+				lineno: 0,
+			} as Todo,
+			{
+				task: TaskType.NotStarted,
+				text: "Also included",
+				indentation: "",
+				lineno: 5,
+			} as Todo,
+		]);
 	});
 
 	test("parseTodos excludes task items inside exclude regions", () => {

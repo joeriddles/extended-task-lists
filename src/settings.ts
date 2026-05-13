@@ -24,8 +24,8 @@ const DEFAULT_SETTINGS: ExtendedTaskListsSettings = {
 	excludeNestedFromParent: true,
 	excludeFilePattern: "<!-- exclude TODO -->",
 	excludeFolderFilename: ".exclude_todos",
-	excludeRegionBegin: "%% exclude: start %%",
-	excludeRegionEnd: "%% exclude: end %%",
+	excludeRegionBegin: "<!-- exclude: start -->",
+	excludeRegionEnd: "<!-- exclude: end -->",
 	includeNotStarted: true,
 	includeInProgress: true,
 	includeWontDo: false,
@@ -120,20 +120,6 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName("Excludes").setHeading();
 
 		new Setting(containerEl)
-			.setName("Exclude file pattern")
-			.setDesc(
-				"A pattern that should be inserted anywhere in a Markdown file to exclude it from the generated TODO file.",
-			)
-			.addText((text) =>
-				text
-					.setValue(this.plugin.settings.excludeFilePattern)
-					.onChange(async (value) => {
-						this.plugin.settings.excludeFilePattern = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
 			.setName("Exclude folder filename")
 			.setDesc(
 				'The filename to add to a folder to exclude all task lists in it from the generated TODO file. You may prefer to change the default value since dot files (files that start with a ".") do not show up within Obsidian.',
@@ -143,6 +129,20 @@ class ExtendedTaskListsSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.excludeFolderFilename)
 					.onChange(async (value) => {
 						this.plugin.settings.excludeFolderFilename = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Exclude file pattern")
+			.setDesc(
+				"A pattern that should be inserted anywhere in a Markdown file to exclude it from the generated TODO file.",
+			)
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.excludeFilePattern)
+					.onChange(async (value) => {
+						this.plugin.settings.excludeFilePattern = value;
 						await this.plugin.saveSettings();
 					}),
 			);
